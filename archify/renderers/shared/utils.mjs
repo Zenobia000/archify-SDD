@@ -155,6 +155,7 @@ export function applyTemplate(template, {
   locale,
   visualPreset = 'classic',
   sourceEvidence = null,
+  traceData = null,
 }) {
   if (!SVG_SLOT_RE.test(template)) {
     throw new Error('applyTemplate: template missing ARCHIFY:SVG_SLOT sentinel');
@@ -176,6 +177,11 @@ export function applyTemplate(template, {
   if (sourceEvidence && !template.includes(SOURCE_EVIDENCE_PLACEHOLDER)) {
     throw new Error(`applyTemplate: repository evidence requires placeholder ${JSON.stringify(SOURCE_EVIDENCE_PLACEHOLDER)}`);
   }
+  // Trace data shares the node-data slot: drill-down links render in the same
+  // node panel as source evidence, and the same opt-in placeholder rule applies.
+  if (traceData && !template.includes(SOURCE_EVIDENCE_PLACEHOLDER)) {
+    throw new Error(`applyTemplate: trace data requires placeholder ${JSON.stringify(SOURCE_EVIDENCE_PLACEHOLDER)}`);
+  }
   // Function replacers: a literal `$&`, `$'`, `$\`` or `$$` in titles, labels,
   // or rendered SVG must not be interpreted as a replacement pattern.
   const sourceEvidenceJson = serializeScriptJson(sourceEvidence);
@@ -195,9 +201,10 @@ export function applyTemplate(template, {
       : '')
     .replace(SVG_SLOT_RE, () => svg)
     .replace(CARDS_SLOT_RE, () => cards)
-    .replace(SOURCE_EVIDENCE_PLACEHOLDER, () => sourceEvidence
-      ? `    <script id="archify-source-evidence-data" type="application/json">${sourceEvidenceJson}</script>`
-      : '');
+    .replace(SOURCE_EVIDENCE_PLACEHOLDER, () => [
+      sourceEvidence && `    <script id="archify-source-evidence-data" type="application/json">${sourceEvidenceJson}</script>`,
+      traceData && `    <script id="archify-trace-data" type="application/json">${serializeScriptJson(traceData)}</script>`,
+    ].filter(Boolean).join('\n'));
 }
 
 // CJK and other wide/fullwidth glyphs render at roughly twice the advance

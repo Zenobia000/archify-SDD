@@ -241,6 +241,9 @@ export function writeDiagram({ outPath, template, diagramType, meta, svg, cards,
     locale: meta.locale,
     visualPreset: meta.visual_preset || 'classic',
     sourceEvidence,
+    traceData: meta.viewpoint || meta.trace
+      ? { viewpoint: meta.viewpoint || null, trace: meta.trace || null }
+      : null,
   });
   let candidatePath;
   let candidateIdentity;
@@ -354,6 +357,37 @@ export function validateRelationshipIds(diagramType, diagram) {
 // and workflow compiler without performing filesystem operations (see #429).
 export function validateCrossCollectionContracts(diagramType, diagram) {
   validateRelationshipIds(diagramType, diagram);
+  validateTraceReferences(diagramType, diagram);
+}
+
+// Drill-down links and stable element IDs attach to semantic nodes, so each
+// referenced node must exist in this diagram. Targets are other artifacts and
+// are resolved by the pack that groups them, not here.
+export function validateTraceReferences(diagramType, diagram) {
+  const trace = diagram?.meta?.trace;
+  if (!trace) return;
+  const collection = SEMANTIC_COLLECTIONS[diagramType];
+  const nodes = collection && Array.isArray(diagram[collection]) ? diagram[collection] : [];
+  const known = new Set(nodes.map((node) => node?.id).filter(Boolean));
+  const problems = [];
+
+  (trace.drills_into || []).forEach((link, index) => {
+    if (!known.has(link.node)) {
+      problems.push(`/meta/trace/drills_into/${index}/node references unknown ${collection} id ${JSON.stringify(link.node)}`);
+    }
+  });
+  Object.keys(trace.elements || {}).forEach((nodeId) => {
+    if (!known.has(nodeId)) {
+      problems.push(`/meta/trace/elements/${nodeId} references unknown ${collection} id ${JSON.stringify(nodeId)}`);
+    }
+  });
+
+  if (problems.length) {
+    throwDiagnosticProblems('Trace reference validation failed', problems, {
+      code: 'trace/unknown-node',
+      subject: { diagramType, collection },
+    });
+  }
 }
 
 // Accessible name for the generated diagram SVG.

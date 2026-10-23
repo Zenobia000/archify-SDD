@@ -27,6 +27,69 @@
     "qualityProfile": {
       "enum": ["standard", "showcase"]
     },
+    "viewpoint": {
+      "description": "Where this diagram sits among engineering viewpoints: abstraction level, concern, optional C4 level, intended roles, and reality status. Document membership belongs to a pack manifest, not here.",
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "level": { "enum": ["business", "system", "implementation"] },
+        "concern": { "enum": ["data", "behavior", "structure", "cross-cutting"] },
+        "c4_level": { "enum": ["context", "container", "component", "code", "deployment"] },
+        "roles": {
+          "type": "array",
+          "uniqueItems": true,
+          "minItems": 1,
+          "maxItems": 6,
+          "items": { "type": "string", "enum": ["business-analyst", "system-analyst", "architect", "software-designer", "developer", "operator"] }
+        },
+        "status": { "enum": ["current", "partial", "target"] }
+      }
+    },
+    "traceElementId": {
+      "description": "Stable cross-diagram element ID such as C-30 or OP-10.",
+      "type": "string",
+      "pattern": "^[A-Z]{1,3}-[0-9]{2,3}$"
+    },
+    "trace": {
+      "description": "Cross-diagram traceability: a stable diagram ID, the higher-level diagrams this one refines, node drill-down links to more detailed diagrams, and stable element IDs shared across diagrams.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "refines": {
+          "type": "array",
+          "uniqueItems": true,
+          "minItems": 1,
+          "maxItems": 8,
+          "items": { "type": "string", "$ref": "#/$defs/id" }
+        },
+        "drills_into": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["node", "target"],
+            "properties": {
+              "node": { "$ref": "#/$defs/id" },
+              "target": { "$ref": "#/$defs/portableOutputPath" },
+              "focus": { "$ref": "#/$defs/id" },
+              "label": { "type": "string", "minLength": 1, "maxLength": 48 }
+            }
+          }
+        },
+        "elements": {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/id" },
+          "additionalProperties": { "$ref": "#/$defs/traceElementId" },
+          "minProperties": 1,
+          "maxProperties": 200
+        }
+      }
+    },
     "portableOutputPath": {
       "description": "A portable POSIX-relative HTML output path. It must be safe to interpret identically on every supported host filesystem.",
       "type": "string",
@@ -125,7 +188,7 @@
           "focus": {
             "type": "array",
             "minItems": 1,
-            "items": { "$ref": "#/$defs/id" }
+            "items": { "type": "string", "$ref": "#/$defs/id" }
           },
           "note": { "type": "string", "maxLength": 140 }
         }

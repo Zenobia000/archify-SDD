@@ -20,6 +20,8 @@
         "output": { "$ref": "common.schema.json#/$defs/portableOutputPath" },
         "animation": { "$ref": "common.schema.json#/$defs/animation" },
         "visual_preset": { "$ref": "common.schema.json#/$defs/visualPreset" },
+        "viewpoint": { "$ref": "common.schema.json#/$defs/viewpoint" },
+        "trace": { "$ref": "common.schema.json#/$defs/trace" },
         "quality_profile": { "$ref": "common.schema.json#/$defs/qualityProfile" },
         "engineering_profile": { "enum": ["deployment-ownership"] },
         "repository": { "$ref": "common.schema.json#/$defs/repository" },
