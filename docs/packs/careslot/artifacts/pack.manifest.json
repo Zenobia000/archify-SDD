@@ -1,0 +1,1040 @@
+{
+  "schema_version": 1,
+  "pack_type": "document-pack",
+  "id": "careslot",
+  "title": "CareSlot design documents",
+  "subtitle": "A fictional clinic appointment and reminder platform, documented from business process down to schema and code.",
+  "locale": "en",
+  "documents": [
+    {
+      "id": "BRD",
+      "kind": "BRD",
+      "title": "Business Requirements Document",
+      "summary": "Why CareSlot exists: how patients, front desk and doctors book visits, and which information and money move between them.",
+      "sections": [
+        {
+          "id": "BRD-3",
+          "title": "Business information flow",
+          "artifacts": [
+            "biz-data-flow"
+          ]
+        },
+        {
+          "id": "BRD-4",
+          "title": "Book a visit process",
+          "artifacts": [
+            "biz-process"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SRS",
+      "kind": "SRS",
+      "title": "Software Requirements Specification",
+      "summary": "What the system must do: booking and rescheduling flows, the data each process transforms, and appointment states.",
+      "sections": [
+        {
+          "id": "SRS-4",
+          "title": "Book or reschedule a visit",
+          "artifacts": [
+            "activity-booking"
+          ]
+        },
+        {
+          "id": "SRS-5",
+          "title": "Booking data flows (DFD level 1)",
+          "artifacts": [
+            "dfd-booking"
+          ]
+        },
+        {
+          "id": "SRS-6",
+          "title": "Appointment states",
+          "artifacts": [
+            "appointment-states"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SAD",
+      "kind": "SAD",
+      "title": "Software Architecture Document",
+      "summary": "How CareSlot is shaped: its context, the containers inside it, and where they run.",
+      "sections": [
+        {
+          "id": "SAD-2",
+          "title": "System context",
+          "artifacts": [
+            "c4-context"
+          ]
+        },
+        {
+          "id": "SAD-4",
+          "title": "Containers",
+          "artifacts": [
+            "c4-containers"
+          ]
+        },
+        {
+          "id": "SAD-7",
+          "title": "Deployment",
+          "artifacts": [
+            "deployment"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SDD",
+      "kind": "SDD",
+      "title": "Software Design Document",
+      "summary": "How the Booking API is built: modules, components, interactions, domain types and schema.",
+      "sections": [
+        {
+          "id": "SDD-3",
+          "title": "Module decomposition",
+          "artifacts": [
+            "modules"
+          ]
+        },
+        {
+          "id": "SDD-4",
+          "title": "Booking API components and domain model",
+          "artifacts": [
+            "c4-booking-api",
+            "code-booking"
+          ]
+        },
+        {
+          "id": "SDD-5",
+          "title": "Confirm booking interaction",
+          "artifacts": [
+            "seq-confirm"
+          ]
+        },
+        {
+          "id": "SDD-6",
+          "title": "Booking schema",
+          "artifacts": [
+            "schema-booking"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ADR-0001",
+      "kind": "ADR",
+      "title": "ADR-0001 Reminder delivery through an outbox",
+      "summary": "Why reminders are published through a transactional outbox and an event bus instead of direct calls.",
+      "sections": [
+        {
+          "id": "ADR-0001-1",
+          "title": "Decision",
+          "artifacts": [
+            "adr-reminder-delivery"
+          ]
+        }
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "biz-data-flow",
+      "type": "dataflow",
+      "title": "CareSlot Business Data Flow",
+      "source": "sources/biz-data-flow.dataflow.json",
+      "output": "biz-data-flow.html",
+      "viewpoint": {
+        "level": "business",
+        "concern": "data",
+        "roles": [
+          "business-analyst",
+          "system-analyst"
+        ],
+        "status": "current"
+      },
+      "documents": [
+        {
+          "document": "BRD",
+          "section": "BRD-3",
+          "title": "Business information flow"
+        }
+      ],
+      "refines": [],
+      "refinedBy": [
+        "dfd-booking"
+      ],
+      "drillsInto": [
+        {
+          "node": "book-visit",
+          "target": "dfd-booking.html",
+          "focus": "reserve-slot",
+          "label": "DFD level 1"
+        }
+      ],
+      "drilledFrom": [],
+      "elements": {
+        "book-visit": "OP-10",
+        "pay-deposit": "OP-20",
+        "send-reminders": "OP-30"
+      },
+      "sha256": "8cb82df40f360b7746dc35f9e030bb348b149f9ab8e44674b445596b120a24a8",
+      "bytes": 836848,
+      "check": true
+    },
+    {
+      "id": "biz-process",
+      "type": "workflow",
+      "title": "CareSlot Business Process: Book a Visit",
+      "source": "sources/biz-process.workflow.json",
+      "output": "biz-process.html",
+      "viewpoint": {
+        "level": "business",
+        "concern": "behavior",
+        "roles": [
+          "business-analyst",
+          "system-analyst"
+        ],
+        "status": "current"
+      },
+      "documents": [
+        {
+          "document": "BRD",
+          "section": "BRD-4",
+          "title": "Book a visit process"
+        }
+      ],
+      "refines": [],
+      "refinedBy": [
+        "activity-booking"
+      ],
+      "drillsInto": [
+        {
+          "node": "choose-slot",
+          "target": "activity-booking.html",
+          "label": "Activity: book or reschedule"
+        }
+      ],
+      "drilledFrom": [],
+      "elements": {
+        "choose-slot": "OP-10",
+        "pay-deposit": "OP-20",
+        "receive-reminder": "OP-30",
+        "reschedule": "OP-40"
+      },
+      "sha256": "570c7b5a5e464291a9a625e8e9b014f8ee60138aa6816f72b30c6ba38997782b",
+      "bytes": 845132,
+      "check": true
+    },
+    {
+      "id": "c4-context",
+      "type": "architecture",
+      "title": "CareSlot System Context (C4 L1)",
+      "source": "sources/c4-context.architecture.json",
+      "output": "c4-context.html",
+      "viewpoint": {
+        "level": "business",
+        "concern": "structure",
+        "c4_level": "context",
+        "roles": [
+          "architect",
+          "system-analyst"
+        ],
+        "status": "current"
+      },
+      "documents": [
+        {
+          "document": "SAD",
+          "section": "SAD-2",
+          "title": "System context"
+        }
+      ],
+      "refines": [],
+      "refinedBy": [
+        "c4-containers"
+      ],
+      "drillsInto": [
+        {
+          "node": "careslot",
+          "target": "c4-containers.html",
+          "focus": "booking-api",
+          "label": "Containers (C4 L2)"
+        }
+      ],
+      "drilledFrom": [],
+      "elements": {},
+      "sha256": "63400a352ef408b4133e22bbdea9a85df7645dbd665703bfed806458e4a91002",
+      "bytes": 836452,
+      "check": true
+    },
+    {
+      "id": "dfd-booking",
+      "type": "dataflow",
+      "title": "CareSlot Booking DFD Level 1",
+      "source": "sources/dfd-booking.dataflow.json",
+      "output": "dfd-booking.html",
+      "viewpoint": {
+        "level": "system",
+        "concern": "data",
+        "roles": [
+          "system-analyst"
+        ],
+        "status": "current"
+      },
+      "documents": [
+        {
+          "document": "SRS",
+          "section": "SRS-5",
+          "title": "Booking data flows (DFD level 1)"
+        }
+      ],
+      "refines": [
+        "biz-data-flow"
+      ],
+      "refinedBy": [
+        "schema-booking"
+      ],
+      "drillsInto": [
+        {
+          "node": "appointments-store",
+          "target": "schema-booking.html",
+          "focus": "appointments",
+          "label": "Booking schema"
+        }
+      ],
+      "drilledFrom": [
+        "biz-data-flow"
+      ],
+      "elements": {
+        "reserve-slot": "OP-10",
+        "take-deposit": "OP-20",
+        "schedule-reminders": "OP-30",
+        "appointments-store": "D-10",
+        "slots-store": "D-11",
+        "payments-store": "D-12"
+      },
+      "sha256": "53125d61f4dd1e6d1f5f3191efb6b7d4c28a0fd03d3dd7bd9385081423930097",
+      "bytes": 838307,
+      "check": true
+    },
+    {
+      "id": "activity-booking",
+      "type": "workflow",
+      "title": "CareSlot Activity: Book or Reschedule a Visit",
+      "source": "sources/activity-booking.workflow.json",
+      "output": "activity-booking.html",
+      "viewpoint": {
+        "level": "system",
+        "concern": "behavior",
+        "roles": [
+          "system-analyst",
+          "software-designer"
+        ],
+        "status": "current"
+      },
+      "documents": [
+        {
+          "document": "SRS",
+          "section": "SRS-4",
+          "title": "Book or reschedule a visit"
+        }
+      ],
+      "refines": [
+        "biz-process"
+      ],
+      "refinedBy": [
+        "seq-confirm",
+        "appointment-states"
+      ],
+      "drillsInto": [
+        {
+          "node": "confirm-booking",
+          "target": "seq-confirm.html",
+          "label": "Sequence: confirm booking"
+        }
+      ],
+      "drilledFrom": [
+        "biz-process"
+      ],
+      "elements": {
+        "reschedule": "OP-40"
+      },
+      "sha256": "585a2ebd32ae1b5edee1c50f0e5e77d85c1f607eaf13d1febb5331629923ce56",
+      "bytes": 843191,
+      "check": true
+    },
+    {
+      "id": "c4-containers",
+      "type": "architecture",
+      "title": "CareSlot Containers (C4 L2)",
+      "source": "sources/c4-containers.architecture.json",
+      "output": "c4-containers.html",
+      "viewpoint": {
+        "level": "system",
+        "concern": "structure",
+        "c4_level": "container",
+        "roles": [
+          "architect"
+        ],
+        "status": "current"
+      },
+      "documents": [
+        {
+          "document": "SAD",
+          "section": "SAD-4",
+          "title": "Containers"
+        }
+      ],
+      "refines": [
+        "c4-context"
+      ],
+      "refinedBy": [
+        "c4-booking-api",
+        "deployment"
+      ],
+      "drillsInto": [
+        {
+          "node": "booking-api",
+          "target": "c4-booking-api.html",
+          "focus": "booking-service",
+          "label": "Components (C4 L3)"
+        },
+        {
+          "node": "booking-db",
+          "target": "schema-booking.html",
+          "focus": "appointments",
+          "label": "Booking schema"
+        }
+      ],
+      "drilledFrom": [
+        "c4-context"
+      ],
+      "elements": {
+        "patient-web": "C-10",
+        "staff-console": "C-11",
+        "booking-api": "C-20",
+        "reminder-worker": "C-21",
+        "event-bus": "C-30",
+        "booking-db": "C-40",
+        "slot-cache": "C-41"
+      },
+      "sha256": "9e09e03bc20b55f73039ec693247bd4fe4337f1b23877cd55f06c1f81113143c",
+      "bytes": 853178,
+      "check": true
+    },
+    {
+      "id": "schema-booking",
+      "type": "erd",
+      "title": "CareSlot booking schema",
+      "source": "sources/schema-booking.erd.json",
+      "output": "schema-booking.html",
+      "viewpoint": {
+        "level": "implementation",
+        "concern": "data",
+        "roles": [
+          "software-designer",
+          "developer"
+        ],
+        "status": "current"
+      },
+      "documents": [
+        {
+          "document": "SDD",
+          "section": "SDD-6",
+          "title": "Booking schema"
+        }
+      ],
+      "refines": [
+        "dfd-booking"
+      ],
+      "refinedBy": [],
+      "drillsInto": [],
+      "drilledFrom": [
+        "dfd-booking",
+        "c4-containers"
+      ],
+      "elements": {
+        "appointments": "D-10",
+        "slots": "D-11",
+        "payments": "D-12"
+      },
+      "sha256": "9f0613b7e343b77cdfcd6ea919b87c86a009d1007b48997b87a73a36126d10a5",
+      "bytes": 868413,
+      "check": true
+    },
+    {
+      "id": "seq-confirm",
+      "type": "sequence",
+      "title": "Confirm booking",
+      "source": "sources/seq-confirm.sequence.json",
+      "output": "seq-confirm.html",
+      "viewpoint": {
+        "level": "implementation",
+        "concern": "behavior",
+        "roles": [
+          "software-designer",
+          "developer"
+        ],
+        "status": "current"
+      },
+      "documents": [
+        {
+          "document": "SDD",
+          "section": "SDD-5",
+          "title": "Confirm booking interaction"
+        }
+      ],
+      "refines": [
+        "activity-booking"
+      ],
+      "refinedBy": [],
+      "drillsInto": [],
+      "drilledFrom": [
+        "activity-booking",
+        "c4-booking-api"
+      ],
+      "elements": {
+        "booking-service": "CP-22",
+        "payment-adapter": "CP-24",
+        "outbox-publisher": "CP-26"
+      },
+      "sha256": "2b7276d2f97d59b7ef05b1ee243a21179cb151ebcd473c70af2a45caec5ff8c3",
+      "bytes": 845358,
+      "check": true
+    },
+    {
+      "id": "c4-booking-api",
+      "type": "architecture",
+      "title": "Booking API Components (C4 L3)",
+      "source": "sources/c4-booking-api.architecture.json",
+      "output": "c4-booking-api.html",
+      "viewpoint": {
+        "level": "implementation",
+        "concern": "structure",
+        "c4_level": "component",
+        "roles": [
+          "architect",
+          "software-designer"
+        ],
+        "status": "current"
+      },
+      "documents": [
+        {
+          "document": "SDD",
+          "section": "SDD-4",
+          "title": "Booking API components and domain model"
+        }
+      ],
+      "refines": [
+        "c4-containers"
+      ],
+      "refinedBy": [
+        "code-booking",
+        "modules"
+      ],
+      "drillsInto": [
+        {
+          "node": "booking-service",
+          "target": "code-booking.html",
+          "focus": "appointment",
+          "label": "Domain model (C4 L4)"
+        },
+        {
+          "node": "payment-adapter",
+          "target": "seq-confirm.html",
+          "label": "Sequence: confirm booking"
+        }
+      ],
+      "drilledFrom": [
+        "c4-containers"
+      ],
+      "elements": {
+        "booking-service": "CP-22",
+        "availability-service": "CP-23",
+        "payment-adapter": "CP-24",
+        "outbox-publisher": "CP-26"
+      },
+      "sha256": "0adb8541ed6adcfa11a7ec5071f9076da887aa8324b2f2014a5fd4b5aa1a6546",
+      "bytes": 853212,
+      "check": true
+    },
+    {
+      "id": "code-booking",
+      "type": "class",
+      "title": "Booking Service domain model",
+      "source": "sources/code-booking.class.json",
+      "output": "code-booking.html",
+      "viewpoint": {
+        "level": "implementation",
+        "concern": "structure",
+        "c4_level": "code",
+        "roles": [
+          "software-designer",
+          "developer"
+        ],
+        "status": "current"
+      },
+      "documents": [
+        {
+          "document": "SDD",
+          "section": "SDD-4",
+          "title": "Booking API components and domain model"
+        }
+      ],
+      "refines": [
+        "c4-booking-api"
+      ],
+      "refinedBy": [],
+      "drillsInto": [],
+      "drilledFrom": [
+        "c4-booking-api"
+      ],
+      "elements": {
+        "appointment": "D-10",
+        "slot": "D-11",
+        "payment": "D-12"
+      },
+      "sha256": "66ed4af8ec92b537b8109e7aead93cd0620ed75be02d22c8af92ce850e090c0c",
+      "bytes": 865374,
+      "check": true
+    },
+    {
+      "id": "appointment-states",
+      "type": "lifecycle",
+      "title": "CareSlot Appointment State Machine",
+      "source": "sources/appointment-states.lifecycle.json",
+      "output": "appointment-states.html",
+      "viewpoint": {
+        "level": "system",
+        "concern": "behavior",
+        "roles": [
+          "system-analyst",
+          "software-designer"
+        ],
+        "status": "current"
+      },
+      "documents": [
+        {
+          "document": "SRS",
+          "section": "SRS-6",
+          "title": "Appointment states"
+        }
+      ],
+      "refines": [
+        "activity-booking"
+      ],
+      "refinedBy": [],
+      "drillsInto": [],
+      "drilledFrom": [],
+      "elements": {},
+      "sha256": "8ba30964d93625ce3cd291052ef57524b23e6a9366ee148f86b70a4b70b91066",
+      "bytes": 835943,
+      "check": true
+    },
+    {
+      "id": "deployment",
+      "type": "architecture",
+      "title": "CareSlot Deployment (target)",
+      "source": "sources/deployment.architecture.json",
+      "output": "deployment.html",
+      "viewpoint": {
+        "level": "system",
+        "concern": "structure",
+        "c4_level": "deployment",
+        "roles": [
+          "architect",
+          "operator"
+        ],
+        "status": "target"
+      },
+      "documents": [
+        {
+          "document": "SAD",
+          "section": "SAD-7",
+          "title": "Deployment"
+        }
+      ],
+      "refines": [
+        "c4-containers"
+      ],
+      "refinedBy": [],
+      "drillsInto": [],
+      "drilledFrom": [],
+      "elements": {
+        "booking-api": "C-20",
+        "reminder-worker": "C-21",
+        "event-bus": "C-30",
+        "booking-db": "C-40",
+        "slot-cache": "C-41"
+      },
+      "sha256": "b4385603506ebc6aa1cf8b8206fc2446f6d71d401ed329a0df3dcbea4ed1e886",
+      "bytes": 850070,
+      "check": true
+    },
+    {
+      "id": "modules",
+      "type": "tree",
+      "title": "Booking API Module Decomposition",
+      "source": "sources/modules.tree.json",
+      "output": "modules.html",
+      "viewpoint": {
+        "level": "implementation",
+        "concern": "structure",
+        "roles": [
+          "software-designer"
+        ],
+        "status": "current"
+      },
+      "documents": [
+        {
+          "document": "SDD",
+          "section": "SDD-3",
+          "title": "Module decomposition"
+        }
+      ],
+      "refines": [
+        "c4-booking-api"
+      ],
+      "refinedBy": [],
+      "drillsInto": [],
+      "drilledFrom": [],
+      "elements": {},
+      "sha256": "72c04b5d65557705390a0d71dec4508500bef466787614cb1f29c9942624a9c2",
+      "bytes": 859430,
+      "check": true
+    },
+    {
+      "id": "adr-reminder-delivery",
+      "type": "explainer",
+      "title": "ADR-0001: Deliver reminders through a transactional outbox",
+      "source": "sources/adr-reminder-delivery.archify.md",
+      "output": "adr-reminder-delivery.html",
+      "viewpoint": {
+        "concern": "cross-cutting",
+        "roles": [
+          "architect"
+        ],
+        "status": "current"
+      },
+      "documents": [
+        {
+          "document": "ADR-0001",
+          "section": "ADR-0001-1",
+          "title": "Decision"
+        }
+      ],
+      "refines": [],
+      "refinedBy": [],
+      "drillsInto": [],
+      "drilledFrom": [],
+      "elements": {},
+      "sha256": "0616e075fb586b24a6ed54f8eaeb4412dfd908fdc677db9addc856fbac09a4b1",
+      "bytes": 539634,
+      "check": true
+    }
+  ],
+  "elements": [
+    {
+      "id": "C-10",
+      "label": "Patient Web App",
+      "owner": "Web team",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "c4-containers",
+          "node": "patient-web"
+        }
+      ]
+    },
+    {
+      "id": "C-11",
+      "label": "Front-desk Console",
+      "owner": "Web team",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "c4-containers",
+          "node": "staff-console"
+        }
+      ]
+    },
+    {
+      "id": "C-20",
+      "label": "Booking API",
+      "owner": "Booking team",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "c4-containers",
+          "node": "booking-api"
+        },
+        {
+          "artifact": "deployment",
+          "node": "booking-api"
+        }
+      ]
+    },
+    {
+      "id": "C-21",
+      "label": "Reminder Worker",
+      "owner": "Booking team",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "c4-containers",
+          "node": "reminder-worker"
+        },
+        {
+          "artifact": "deployment",
+          "node": "reminder-worker"
+        }
+      ]
+    },
+    {
+      "id": "C-30",
+      "label": "Event Bus",
+      "owner": "Platform team",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "c4-containers",
+          "node": "event-bus"
+        },
+        {
+          "artifact": "deployment",
+          "node": "event-bus"
+        }
+      ]
+    },
+    {
+      "id": "C-40",
+      "label": "Booking DB",
+      "owner": "Booking team",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "c4-containers",
+          "node": "booking-db"
+        },
+        {
+          "artifact": "deployment",
+          "node": "booking-db"
+        }
+      ]
+    },
+    {
+      "id": "C-41",
+      "label": "Slot Cache",
+      "owner": "Booking team",
+      "status": "partial",
+      "appearsIn": [
+        {
+          "artifact": "c4-containers",
+          "node": "slot-cache"
+        },
+        {
+          "artifact": "deployment",
+          "node": "slot-cache"
+        }
+      ]
+    },
+    {
+      "id": "CP-22",
+      "label": "Booking Service",
+      "owner": "Booking team",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "seq-confirm",
+          "node": "booking-service"
+        },
+        {
+          "artifact": "c4-booking-api",
+          "node": "booking-service"
+        }
+      ]
+    },
+    {
+      "id": "CP-23",
+      "label": "Availability Service",
+      "owner": "Booking team",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "c4-booking-api",
+          "node": "availability-service"
+        }
+      ]
+    },
+    {
+      "id": "CP-24",
+      "label": "Payment Adapter",
+      "owner": "Booking team",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "seq-confirm",
+          "node": "payment-adapter"
+        },
+        {
+          "artifact": "c4-booking-api",
+          "node": "payment-adapter"
+        }
+      ]
+    },
+    {
+      "id": "CP-26",
+      "label": "Outbox Publisher",
+      "owner": "Booking team",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "seq-confirm",
+          "node": "outbox-publisher"
+        },
+        {
+          "artifact": "c4-booking-api",
+          "node": "outbox-publisher"
+        }
+      ]
+    },
+    {
+      "id": "D-10",
+      "label": "Appointment",
+      "owner": "Booking team",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "dfd-booking",
+          "node": "appointments-store"
+        },
+        {
+          "artifact": "schema-booking",
+          "node": "appointments"
+        },
+        {
+          "artifact": "code-booking",
+          "node": "appointment"
+        }
+      ]
+    },
+    {
+      "id": "D-11",
+      "label": "Slot",
+      "owner": "Booking team",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "dfd-booking",
+          "node": "slots-store"
+        },
+        {
+          "artifact": "schema-booking",
+          "node": "slots"
+        },
+        {
+          "artifact": "code-booking",
+          "node": "slot"
+        }
+      ]
+    },
+    {
+      "id": "D-12",
+      "label": "Payment",
+      "owner": "Booking team",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "dfd-booking",
+          "node": "payments-store"
+        },
+        {
+          "artifact": "schema-booking",
+          "node": "payments"
+        },
+        {
+          "artifact": "code-booking",
+          "node": "payment"
+        }
+      ]
+    },
+    {
+      "id": "OP-10",
+      "label": "Book a visit",
+      "owner": "Clinic operations",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "biz-data-flow",
+          "node": "book-visit"
+        },
+        {
+          "artifact": "biz-process",
+          "node": "choose-slot"
+        },
+        {
+          "artifact": "dfd-booking",
+          "node": "reserve-slot"
+        }
+      ]
+    },
+    {
+      "id": "OP-20",
+      "label": "Pay deposit",
+      "owner": "Clinic operations",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "biz-data-flow",
+          "node": "pay-deposit"
+        },
+        {
+          "artifact": "biz-process",
+          "node": "pay-deposit"
+        },
+        {
+          "artifact": "dfd-booking",
+          "node": "take-deposit"
+        }
+      ]
+    },
+    {
+      "id": "OP-30",
+      "label": "Send reminders",
+      "owner": "Clinic operations",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "biz-data-flow",
+          "node": "send-reminders"
+        },
+        {
+          "artifact": "biz-process",
+          "node": "receive-reminder"
+        },
+        {
+          "artifact": "dfd-booking",
+          "node": "schedule-reminders"
+        }
+      ]
+    },
+    {
+      "id": "OP-40",
+      "label": "Reschedule or cancel",
+      "owner": "Clinic operations",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "biz-process",
+          "node": "reschedule"
+        },
+        {
+          "artifact": "activity-booking",
+          "node": "reschedule"
+        }
+      ]
+    }
+  ]
+}

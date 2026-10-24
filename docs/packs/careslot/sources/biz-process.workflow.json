@@ -1,0 +1,87 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "CareSlot Business Process: Book a Visit",
+    "output": "biz-process.html",
+    "locale": "en",
+    "visual_preset": "reference",
+    "quality_profile": "showcase",
+    "viewpoint": { "level": "business", "concern": "behavior", "roles": ["business-analyst", "system-analyst"], "status": "current" },
+    "trace": {
+      "id": "biz-process",
+      "drills_into": [{ "node": "choose-slot", "target": "activity-booking.html", "label": "Activity: book or reschedule" }],
+      "elements": { "choose-slot": "OP-10", "pay-deposit": "OP-20", "receive-reminder": "OP-30", "reschedule": "OP-40" }
+    },
+    "legend": {
+      "entries": {
+        "frontend": { "label": "Patient step" },
+        "backend": { "label": "CareSlot step" },
+        "external": { "label": "Clinic staff step" },
+        "security": { "label": "Business rule or outcome" }
+      }
+    }
+  },
+  "lanes": [
+    { "id": "patient-lane", "label": "Patient" },
+    { "id": "careslot-lane", "label": "CareSlot" },
+    { "id": "front-desk-lane", "label": "Front desk" },
+    { "id": "doctor-lane", "label": "Doctor" }
+  ],
+  "phases": [
+    { "id": "book-phase", "label": "Book and pay", "fromCol": 0, "toCol": 1, "variant": "emphasis" },
+    { "id": "wait-phase", "label": "Before the visit", "fromCol": 2, "toCol": 3 },
+    { "id": "visit-phase", "label": "Visit day", "fromCol": 4, "toCol": 5 }
+  ],
+  "mainPath": ["choose-slot", "hold-slot", "pay-deposit", "confirm-visit", "send-reminder", "receive-reminder", "arrival-check", "check-in", "consult", "visit-to-emr"],
+  "nodes": [
+    { "id": "choose-slot", "lane": "patient-lane", "col": 0, "type": "frontend", "icon": "calendar", "label": "Choose a slot", "sublabel": "doctor, date, time", "tag": "OP-10" },
+    { "id": "pay-deposit", "lane": "patient-lane", "col": 1, "type": "frontend", "label": "Pay deposit", "sublabel": "card payment", "tag": "OP-20" },
+    { "id": "receive-reminder", "lane": "patient-lane", "col": 2, "type": "frontend", "icon": "clock", "label": "Get reminder", "sublabel": "SMS or LINE", "tag": "OP-30" },
+    { "id": "reschedule", "lane": "patient-lane", "col": 3, "type": "frontend", "label": "Reschedule or cancel", "sublabel": "until 2 h before", "tag": "OP-40" },
+    { "id": "hold-slot", "lane": "careslot-lane", "col": 0, "type": "backend", "label": "Hold slot", "sublabel": "10 minutes" },
+    { "id": "confirm-visit", "lane": "careslot-lane", "col": 1, "type": "backend", "label": "Confirm visit", "sublabel": "after payment" },
+    { "id": "send-reminder", "lane": "careslot-lane", "col": 2, "type": "backend", "label": "Send reminders", "sublabel": "24 h and 2 h before" },
+    { "id": "refund", "lane": "careslot-lane", "col": 3, "type": "security", "label": "Refund deposit", "sublabel": "cancel > 24 h before" },
+    { "id": "forfeit", "lane": "careslot-lane", "col": 4, "type": "security", "label": "Forfeit deposit", "sublabel": "no-show" },
+    { "id": "visit-to-emr", "lane": "careslot-lane", "col": 5, "type": "backend", "label": "Send visit to EMR", "sublabel": "Clinic EMR" },
+    { "id": "arrival-check", "lane": "front-desk-lane", "col": 3, "type": "security", "icon": "decision", "label": "Patient arrived?", "sublabel": "on visit day" },
+    { "id": "check-in", "lane": "front-desk-lane", "col": 4, "type": "external", "icon": "person", "label": "Check in", "sublabel": "at reception" },
+    { "id": "consult", "lane": "doctor-lane", "col": 5, "type": "external", "icon": "person", "label": "Consultation", "sublabel": "see the patient" }
+  ],
+  "edges": [
+    { "id": "e-choose-hold", "from": "choose-slot", "to": "hold-slot", "label": "request", "variant": "emphasis" },
+    { "id": "e-hold-pay", "from": "hold-slot", "to": "pay-deposit", "label": "amount due", "variant": "emphasis" },
+    { "id": "e-pay-confirm", "from": "pay-deposit", "to": "confirm-visit", "label": "paid", "variant": "emphasis" },
+    { "id": "e-confirm-remind", "from": "confirm-visit", "to": "send-reminder", "variant": "emphasis" },
+    { "id": "e-remind-patient", "from": "send-reminder", "to": "receive-reminder", "label": "notice", "variant": "dashed", "role": "async" },
+    { "id": "e-change-plans", "from": "receive-reminder", "to": "reschedule", "label": "change plans", "role": "branch" },
+    { "id": "e-rebook", "from": "reschedule", "to": "choose-slot", "label": "new slot", "role": "return" },
+    { "id": "e-cancel-refund", "from": "reschedule", "to": "refund", "label": "cancel", "role": "branch" },
+    { "id": "e-visit-day", "from": "receive-reminder", "to": "arrival-check", "label": "visit day", "variant": "emphasis" },
+    { "id": "e-arrived", "from": "arrival-check", "to": "check-in", "label": "yes", "variant": "emphasis" },
+    { "id": "e-no-show", "from": "arrival-check", "to": "forfeit", "label": "no-show", "variant": "security", "role": "error" },
+    { "id": "e-checkin-consult", "from": "check-in", "to": "consult", "variant": "emphasis" },
+    { "id": "e-consult-emr", "from": "consult", "to": "visit-to-emr", "label": "visit record", "variant": "emphasis" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Happy path",
+      "items": [
+        "The slot is held for 10 minutes while the patient pays",
+        "The visit is confirmed only after the deposit succeeds",
+        "Reminders go out 24 h and 2 h before the visit"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Deposit rules",
+      "items": [
+        "Reschedule allowed until 2 h before the visit",
+        "Cancel more than 24 h before: deposit refunded",
+        "No-show: deposit forfeited"
+      ]
+    }
+  ]
+}

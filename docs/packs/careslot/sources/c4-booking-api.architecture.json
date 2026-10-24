@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Booking API Components (C4 L3)",
+    "output": "c4-booking-api.html",
+    "locale": "en",
+    "visual_preset": "reference",
+    "quality_profile": "showcase",
+    "viewpoint": { "level": "implementation", "concern": "structure", "c4_level": "component", "roles": ["architect", "software-designer"], "status": "current" },
+    "trace": {
+      "id": "c4-booking-api",
+      "refines": ["c4-containers"],
+      "drills_into": [
+        { "node": "booking-service", "target": "code-booking.html", "focus": "appointment", "label": "Domain model (C4 L4)" },
+        { "node": "payment-adapter", "target": "seq-confirm.html", "label": "Sequence: confirm booking" }
+      ],
+      "elements": {
+        "booking-service": "CP-22",
+        "availability-service": "CP-23",
+        "payment-adapter": "CP-24",
+        "outbox-publisher": "CP-26"
+      }
+    },
+    "legend": {
+      "entries": {
+        "backend": { "label": "Component" },
+        "security": { "label": "Component: security" },
+        "frontend": { "label": "Container: web app" },
+        "database": { "label": "Container: data store" },
+        "messagebus": { "label": "Container: message broker" },
+        "external": { "label": "External system" }
+      }
+    }
+  },
+  "components": [
+    { "id": "patient-web", "type": "frontend", "label": "Patient Web App", "sublabel": "[Container] React SPA", "pos": [240, 40], "size": [170, 64] },
+    { "id": "staff-console", "type": "frontend", "label": "Front-desk Console", "sublabel": "[Container] React SPA", "pos": [430, 40], "size": [170, 64] },
+
+    { "id": "api-router", "type": "backend", "label": "API Router", "sublabel": "endpoints, validation", "pos": [330, 200], "size": [170, 64] },
+    { "id": "auth-guard", "type": "security", "label": "Auth Guard", "sublabel": "token, clinic/role scope", "pos": [620, 200], "size": [170, 64] },
+    { "id": "availability-service", "type": "backend", "label": "Availability Service", "sublabel": "open slots per doctor", "pos": [40, 350], "size": [170, 64] },
+    { "id": "booking-service", "type": "backend", "label": "Booking Service", "sublabel": "hold, confirm, cancel", "pos": [330, 350], "size": [170, 64] },
+    { "id": "payment-adapter", "type": "backend", "label": "Payment Adapter", "sublabel": "deposits, refunds", "pos": [620, 350], "size": [170, 64] },
+    { "id": "booking-repository", "type": "backend", "label": "Booking Repository", "sublabel": "appointments, slots", "pos": [330, 500], "size": [170, 64] },
+    { "id": "outbox-publisher", "type": "backend", "label": "Outbox Publisher", "sublabel": "reliable events", "pos": [620, 500], "size": [170, 64] },
+
+    { "id": "slot-cache", "type": "database", "label": "Slot Cache", "sublabel": "[Container] Redis", "pos": [40, 660], "size": [170, 64] },
+    { "id": "booking-db", "type": "database", "label": "Booking DB", "sublabel": "[Container] PostgreSQL", "pos": [330, 660], "size": [170, 64] },
+    { "id": "event-bus", "type": "messagebus", "label": "Event Bus", "sublabel": "[Container] RabbitMQ", "pos": [620, 660], "size": [170, 64] },
+
+    { "id": "idp", "type": "external", "label": "Identity Provider", "sublabel": "[External] OIDC", "pos": [1000, 200], "size": [170, 64] },
+    { "id": "payment-provider", "type": "external", "label": "Payment Provider", "sublabel": "[External] deposits", "pos": [1000, 350], "size": [170, 64] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Booking API [Container]", "wraps": ["api-router", "auth-guard", "availability-service", "booking-service", "payment-adapter", "booking-repository", "outbox-publisher"], "pad": 24 }
+  ],
+  "connections": [
+    { "id": "web-calls-router", "from": "patient-web", "to": "api-router", "label": "REST · HTTPS/JSON", "variant": "emphasis" },
+    { "id": "console-calls-router", "from": "staff-console", "to": "api-router", "label": "REST · HTTPS/JSON" },
+    { "id": "router-checks-auth", "from": "api-router", "to": "auth-guard", "label": "Checks token", "variant": "security" },
+    { "id": "guard-fetches-keys", "from": "auth-guard", "to": "idp", "label": "JWKS keys · OIDC", "variant": "security" },
+    { "id": "router-to-booking", "from": "api-router", "to": "booking-service", "label": "hold, confirm, cancel", "variant": "emphasis" },
+    { "id": "router-to-availability", "from": "api-router", "to": "availability-service", "label": "open slots" },
+    { "id": "booking-checks-slot", "from": "booking-service", "to": "availability-service", "label": "checks slot" },
+    { "id": "booking-to-payment", "from": "booking-service", "to": "payment-adapter", "label": "deposit, refund", "variant": "emphasis" },
+    { "id": "adapter-to-provider", "from": "payment-adapter", "to": "payment-provider", "label": "Intents · HTTPS + webhook", "variant": "emphasis" },
+    { "id": "booking-persists", "from": "booking-service", "to": "booking-repository", "label": "appointment + outbox row", "variant": "emphasis" },
+    { "id": "availability-reads-cache", "from": "availability-service", "to": "slot-cache", "label": "Cached slots · RESP" },
+    { "id": "availability-cache-miss", "from": "availability-service", "to": "booking-repository", "label": "cache miss" },
+    { "id": "repository-sql", "from": "booking-repository", "to": "booking-db", "label": "SQL", "variant": "emphasis" },
+    { "id": "outbox-polls", "from": "outbox-publisher", "to": "booking-db", "label": "Polls outbox · SQL", "variant": "dashed" },
+    { "id": "outbox-publishes", "from": "outbox-publisher", "to": "event-bus", "label": "Publishes · AMQP", "variant": "dashed" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Request path", "items": ["API Router validates the request and asks Auth Guard to check the OIDC token and clinic/role scope", "Booking Service holds the slot for 10 minutes and confirms only after the deposit succeeds"] },
+    { "dot": "violet", "title": "Reliable events", "items": ["The appointment change and its outbox row commit in one SQL transaction", "Outbox Publisher relays outbox rows to the Event Bus over AMQP"] },
+    { "dot": "amber", "title": "Reads", "items": ["Availability Service reads open slots from the Slot Cache", "On a cache miss it falls back to the Booking Repository"] }
+  ]
+}

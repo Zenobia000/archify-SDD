@@ -1,0 +1,372 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Confirm booking",
+    "locale": "en",
+    "output": "seq-confirm.html",
+    "visual_preset": "reference",
+    "quality_profile": "showcase",
+    "viewpoint": {
+      "level": "implementation",
+      "concern": "behavior",
+      "roles": [
+        "software-designer",
+        "developer"
+      ],
+      "status": "current"
+    },
+    "trace": {
+      "id": "seq-confirm",
+      "refines": [
+        "activity-booking"
+      ],
+      "elements": {
+        "booking-service": "CP-22",
+        "payment-adapter": "CP-24",
+        "outbox-publisher": "CP-26"
+      }
+    },
+    "legend": {
+      "entries": {
+        "emphasis": {
+          "label": "Main booking path"
+        },
+        "security": {
+          "label": "Signed provider callback"
+        },
+        "dashed": {
+          "label": "Asynchronous (outbox / AMQP)"
+        },
+        "return": {
+          "label": "Return"
+        }
+      }
+    }
+  },
+  "participants": [
+    {
+      "id": "patient-web",
+      "type": "frontend",
+      "label": "Patient Web App",
+      "sublabel": "React SPA"
+    },
+    {
+      "id": "booking-service",
+      "type": "backend",
+      "label": "Booking Service",
+      "sublabel": "hold \u00b7 confirm"
+    },
+    {
+      "id": "payment-adapter",
+      "type": "backend",
+      "label": "Payment Adapter",
+      "sublabel": "deposits"
+    },
+    {
+      "id": "payment-provider",
+      "type": "external",
+      "label": "Payment Provider",
+      "sublabel": "card deposits"
+    },
+    {
+      "id": "booking-db",
+      "type": "database",
+      "label": "Booking DB",
+      "sublabel": "PostgreSQL"
+    },
+    {
+      "id": "outbox-publisher",
+      "type": "backend",
+      "label": "Outbox Publisher",
+      "sublabel": "relay"
+    },
+    {
+      "id": "event-bus",
+      "type": "messagebus",
+      "label": "Event Bus",
+      "sublabel": "RabbitMQ"
+    },
+    {
+      "id": "reminder-worker",
+      "type": "backend",
+      "label": "Reminder Worker",
+      "sublabel": "Node.js"
+    }
+  ],
+  "segments": [
+    {
+      "from": 162,
+      "to": 280,
+      "label": "Hold slot"
+    },
+    {
+      "from": 288,
+      "to": 434,
+      "label": "Create deposit"
+    },
+    {
+      "from": 444,
+      "to": 698,
+      "label": "Confirm on payment"
+    },
+    {
+      "from": 708,
+      "to": 878,
+      "label": "Publish and schedule"
+    }
+  ],
+  "messages": [
+    {
+      "id": "hold-request",
+      "from": "patient-web",
+      "to": "booking-service",
+      "y": 175,
+      "label": "POST /appointments/hold",
+      "variant": "emphasis",
+      "note": "Via API Router; Auth Guard checks the OIDC token. Slot held 10 min in Redis."
+    },
+    {
+      "id": "insert-held",
+      "from": "booking-service",
+      "to": "booking-db",
+      "y": 235,
+      "label": "insert appointment (held)"
+    },
+    {
+      "id": "held-id",
+      "from": "booking-db",
+      "to": "booking-service",
+      "y": 265,
+      "label": "appointment id",
+      "variant": "return"
+    },
+    {
+      "id": "create-deposit",
+      "from": "booking-service",
+      "to": "payment-adapter",
+      "y": 300,
+      "label": "createDeposit(appt)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "create-intent",
+      "from": "payment-adapter",
+      "to": "payment-provider",
+      "y": 330,
+      "label": "create intent \u00b7 HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "intent-created",
+      "from": "payment-provider",
+      "to": "payment-adapter",
+      "y": 360,
+      "label": "intent + client secret",
+      "variant": "return"
+    },
+    {
+      "id": "deposit-ref",
+      "from": "payment-adapter",
+      "to": "booking-service",
+      "y": 390,
+      "label": "deposit ref",
+      "variant": "return"
+    },
+    {
+      "id": "hold-response",
+      "from": "booking-service",
+      "to": "patient-web",
+      "y": 420,
+      "label": "201 held + client secret",
+      "variant": "return"
+    },
+    {
+      "id": "payment-webhook",
+      "from": "payment-provider",
+      "to": "payment-adapter",
+      "y": 456,
+      "label": "payment succeeded webhook",
+      "variant": "security",
+      "note": "Signature verified; replays ignored."
+    },
+    {
+      "id": "confirm-deposit",
+      "from": "payment-adapter",
+      "to": "booking-service",
+      "y": 506,
+      "label": "confirmDeposit(intent)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "commit-confirm",
+      "from": "booking-service",
+      "to": "booking-db",
+      "y": 536,
+      "label": "commit confirm + outbox",
+      "variant": "emphasis",
+      "note": "One transaction: appointment confirmed, payment settled, outbox row added."
+    },
+    {
+      "id": "committed",
+      "from": "booking-db",
+      "to": "booking-service",
+      "y": 624,
+      "label": "committed",
+      "variant": "return"
+    },
+    {
+      "id": "confirmed",
+      "from": "booking-service",
+      "to": "payment-adapter",
+      "y": 654,
+      "label": "confirmed",
+      "variant": "return"
+    },
+    {
+      "id": "webhook-ack",
+      "from": "payment-adapter",
+      "to": "payment-provider",
+      "y": 684,
+      "label": "200 OK",
+      "variant": "return"
+    },
+    {
+      "id": "poll-outbox",
+      "from": "outbox-publisher",
+      "to": "booking-db",
+      "y": 720,
+      "label": "read unpublished rows",
+      "variant": "dashed"
+    },
+    {
+      "id": "pending-rows",
+      "from": "booking-db",
+      "to": "outbox-publisher",
+      "y": 750,
+      "label": "appointment.confirmed",
+      "variant": "return"
+    },
+    {
+      "id": "publish-event",
+      "from": "outbox-publisher",
+      "to": "event-bus",
+      "y": 780,
+      "label": "publish \u00b7 AMQP",
+      "variant": "dashed"
+    },
+    {
+      "id": "deliver-event",
+      "from": "event-bus",
+      "to": "reminder-worker",
+      "y": 810,
+      "label": "appointment.confirmed",
+      "variant": "dashed",
+      "note": "Schedules the 24 h and 2 h reminders."
+    },
+    {
+      "id": "mark-published",
+      "from": "outbox-publisher",
+      "to": "booking-db",
+      "y": 862,
+      "label": "mark published",
+      "variant": "dashed"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "patient-web",
+      "from": 175,
+      "to": 420,
+      "type": "frontend"
+    },
+    {
+      "participant": "booking-service",
+      "from": 175,
+      "to": 420,
+      "type": "backend"
+    },
+    {
+      "participant": "booking-db",
+      "from": 235,
+      "to": 265,
+      "type": "database"
+    },
+    {
+      "participant": "payment-adapter",
+      "from": 300,
+      "to": 390,
+      "type": "backend"
+    },
+    {
+      "participant": "payment-provider",
+      "from": 330,
+      "to": 360,
+      "type": "external"
+    },
+    {
+      "participant": "payment-adapter",
+      "from": 456,
+      "to": 684,
+      "type": "backend"
+    },
+    {
+      "participant": "booking-service",
+      "from": 506,
+      "to": 654,
+      "type": "backend"
+    },
+    {
+      "participant": "booking-db",
+      "from": 536,
+      "to": 624,
+      "type": "database"
+    },
+    {
+      "participant": "outbox-publisher",
+      "from": 720,
+      "to": 862,
+      "type": "backend"
+    },
+    {
+      "participant": "event-bus",
+      "from": 780,
+      "to": 810,
+      "type": "messagebus"
+    },
+    {
+      "participant": "reminder-worker",
+      "from": 810,
+      "to": 840,
+      "type": "backend"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Hold, then pay",
+      "items": [
+        "The slot is reserved for 10 minutes before any money moves.",
+        "The patient pays in the browser with the client secret; the API never sees card data.",
+        "An unpaid hold expires and the slot reopens."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Confirmation is payment-driven",
+      "items": [
+        "Only the signed provider webhook confirms the appointment.",
+        "The payment intent id is unique, so a replayed webhook changes nothing."
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": "Reliable events",
+      "items": [
+        "The outbox row commits with the confirmed appointment, so the event cannot be lost.",
+        "Publishing is asynchronous and retried; the webhook is answered before it happens.",
+        "Reminder Worker schedules reminders 24 h and 2 h before the visit."
+      ]
+    }
+  ]
+}

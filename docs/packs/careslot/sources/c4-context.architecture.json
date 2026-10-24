@@ -1,0 +1,203 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "CareSlot System Context (C4 L1)",
+    "output": "c4-context.html",
+    "locale": "en",
+    "visual_preset": "reference",
+    "quality_profile": "showcase",
+    "viewpoint": {
+      "level": "business",
+      "concern": "structure",
+      "c4_level": "context",
+      "roles": [
+        "architect",
+        "system-analyst"
+      ],
+      "status": "current"
+    },
+    "trace": {
+      "id": "c4-context",
+      "drills_into": [
+        {
+          "node": "careslot",
+          "target": "c4-containers.html",
+          "focus": "booking-api",
+          "label": "Containers (C4 L2)"
+        }
+      ]
+    },
+    "legend": {
+      "entries": {
+        "backend": {
+          "label": "Software system in scope"
+        },
+        "external": {
+          "label": "Person / external system"
+        }
+      }
+    }
+  },
+  "components": [
+    {
+      "id": "patient",
+      "type": "external",
+      "icon": "person",
+      "label": "Patient",
+      "sublabel": "[Person] books visits",
+      "pos": [40, 40],
+      "size": [160, 64]
+    },
+    {
+      "id": "front-desk",
+      "type": "external",
+      "icon": "person",
+      "label": "Front-desk staff",
+      "sublabel": "[Person] runs the desk",
+      "pos": [40, 136],
+      "size": [160, 64]
+    },
+    {
+      "id": "doctor",
+      "type": "external",
+      "icon": "person",
+      "label": "Doctor",
+      "sublabel": "[Person] sees patients",
+      "pos": [40, 232],
+      "size": [160, 64]
+    },
+    {
+      "id": "clinic-admin",
+      "type": "external",
+      "icon": "person",
+      "label": "Clinic admin",
+      "sublabel": "[Person] owns policies",
+      "pos": [40, 360],
+      "size": [160, 64]
+    },
+    {
+      "id": "careslot",
+      "type": "backend",
+      "label": "CareSlot",
+      "sublabel": "[Software System] booking + reminders",
+      "tag": "in scope",
+      "pos": [440, 40],
+      "size": [210, 434]
+    },
+    {
+      "id": "idp",
+      "type": "external",
+      "label": "Identity Provider",
+      "sublabel": "[External] OIDC sign-in",
+      "pos": [890, 40],
+      "size": [170, 64]
+    },
+    {
+      "id": "payment-provider",
+      "type": "external",
+      "label": "Payment Provider",
+      "sublabel": "[External] deposits, refunds",
+      "pos": [890, 195],
+      "size": [170, 64]
+    },
+    {
+      "id": "messaging-provider",
+      "type": "external",
+      "label": "Messaging Provider",
+      "sublabel": "[External] SMS + LINE",
+      "pos": [890, 360],
+      "size": [170, 64]
+    },
+    {
+      "id": "clinic-emr",
+      "type": "external",
+      "label": "Clinic EMR",
+      "sublabel": "[External] medical record",
+      "pos": [460, 560],
+      "size": [170, 64]
+    }
+  ],
+  "connections": [
+    {
+      "id": "patient-books",
+      "from": "patient",
+      "to": "careslot",
+      "label": "Books & pays visits · HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "front-desk-manages",
+      "from": "front-desk",
+      "to": "careslot",
+      "label": "Checks in, rebooks · HTTPS"
+    },
+    {
+      "id": "doctor-views",
+      "from": "doctor",
+      "to": "careslot",
+      "label": "Views day schedule · HTTPS"
+    },
+    {
+      "id": "admin-configures",
+      "from": "clinic-admin",
+      "to": "careslot",
+      "label": "Sets slots, policies · HTTPS"
+    },
+    {
+      "id": "careslot-signin",
+      "from": "careslot",
+      "to": "idp",
+      "label": "Delegates sign-in · OIDC",
+      "variant": "security"
+    },
+    {
+      "id": "careslot-deposit",
+      "from": "careslot",
+      "to": "payment-provider",
+      "label": "Deposits, refunds · HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "careslot-reminders",
+      "from": "careslot",
+      "to": "messaging-provider",
+      "label": "Sends reminders · HTTPS",
+      "variant": "dashed"
+    },
+    {
+      "id": "careslot-emr",
+      "from": "careslot",
+      "to": "clinic-emr",
+      "label": "Pushes confirmed visits · HTTPS",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Scope",
+      "items": [
+        "CareSlot is one system at this level",
+        "Containers are drawn in the C4 L2 diagram"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Business rules",
+      "items": [
+        "Slot held 10 min; confirmed only after deposit succeeds",
+        "Reminders 24 h and 2 h before the visit",
+        "Confirmed visits are pushed to the Clinic EMR"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Trust",
+      "items": [
+        "All staff and patient sign-in goes through the Identity Provider",
+        "Payment results return by provider webhook"
+      ]
+    }
+  ]
+}

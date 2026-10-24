@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "CareSlot Business Data Flow",
+    "output": "biz-data-flow.html",
+    "locale": "en",
+    "visual_preset": "reference",
+    "quality_profile": "showcase",
+    "viewpoint": { "level": "business", "concern": "data", "roles": ["business-analyst", "system-analyst"], "status": "current" },
+    "trace": {
+      "id": "biz-data-flow",
+      "drills_into": [{ "node": "book-visit", "target": "dfd-booking.html", "focus": "reserve-slot", "label": "DFD level 1" }],
+      "elements": { "book-visit": "OP-10", "pay-deposit": "OP-20", "send-reminders": "OP-30" }
+    },
+    "legend": {
+      "entries": {
+        "emphasis": { "label": "Main booking documents" },
+        "default": { "label": "Business information" },
+        "dashed": { "label": "Scheduled notice" },
+        "database": { "label": "Business record" }
+      }
+    }
+  },
+  "stages": [
+    { "label": "People" },
+    { "label": "Book and pay" },
+    { "label": "Business records" },
+    { "label": "Visit day" },
+    { "label": "Receivers" }
+  ],
+  "nodes": [
+    { "id": "patient", "type": "external", "icon": "person", "label": "Patient", "sublabel": "books and pays", "stage": 0, "row": 1 },
+    { "id": "front-desk", "type": "external", "icon": "person", "label": "Front desk", "sublabel": "clinic staff", "stage": 0, "row": 3 },
+    { "id": "book-visit", "type": "backend", "icon": "calendar", "label": "Book a visit", "sublabel": "slot held 10 min", "stage": 1, "row": 0, "tag": "OP-10" },
+    { "id": "pay-deposit", "type": "backend", "label": "Pay deposit", "sublabel": "confirms booking", "stage": 1, "row": 2, "tag": "OP-20" },
+    { "id": "appointment-book", "type": "database", "label": "Appointment book", "sublabel": "booked visits", "stage": 2, "row": 0 },
+    { "id": "deposit-ledger", "type": "database", "label": "Deposit ledger", "sublabel": "deposits, refunds", "stage": 2, "row": 2 },
+    { "id": "send-reminders", "type": "backend", "icon": "clock", "label": "Send reminders", "sublabel": "24 h and 2 h before", "stage": 3, "row": 0, "tag": "OP-30" },
+    { "id": "hold-visit", "type": "backend", "label": "Hold the visit", "sublabel": "check-in, consult", "stage": 3, "row": 2 },
+    { "id": "doctor", "type": "external", "icon": "person", "label": "Doctor", "sublabel": "sees the patient", "stage": 4, "row": 1 },
+    { "id": "clinic-emr", "type": "external", "label": "Clinic EMR", "sublabel": "medical records", "stage": 4, "row": 3 }
+  ],
+  "flows": [
+    { "id": "booking-request", "from": "patient", "to": "book-visit", "label": "booking request", "classification": "chosen slot", "variant": "emphasis" },
+    { "id": "deposit-money", "from": "patient", "to": "pay-deposit", "label": "deposit", "classification": "money", "variant": "emphasis" },
+    { "id": "held-booking", "from": "book-visit", "to": "pay-deposit", "label": "amount due", "classification": "held slot" },
+    { "id": "deposit-entry", "from": "pay-deposit", "to": "deposit-ledger", "label": "receipt", "classification": "money record", "variant": "emphasis" },
+    { "id": "appointment-slip", "from": "pay-deposit", "to": "appointment-book", "label": "appointment slip", "classification": "confirmed visit", "variant": "emphasis" },
+    { "id": "upcoming-visits", "from": "appointment-book", "to": "send-reminders", "label": "upcoming visits", "classification": "date, patient", "route": "straight" },
+    { "id": "reminder-notice", "from": "send-reminders", "to": "patient", "label": "reminder notice", "classification": "SMS / LINE", "variant": "dashed", "fromSide": "top", "toSide": "top" },
+    { "id": "arrival", "from": "front-desk", "to": "hold-visit", "label": "check-in", "classification": "arrival" },
+    { "id": "day-list", "from": "appointment-book", "to": "hold-visit", "label": "day's visits", "classification": "schedule" },
+    { "id": "consult-notes", "from": "doctor", "to": "hold-visit", "label": "consult notes", "classification": "clinical" },
+    { "id": "visit-record", "from": "hold-visit", "to": "clinic-emr", "label": "visit record", "classification": "confirmed visit", "variant": "emphasis" },
+    { "id": "no-show-forfeit", "from": "hold-visit", "to": "deposit-ledger", "label": "forfeit or refund", "classification": "money" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Main documents",
+      "items": [
+        "A booking request holds a slot for 10 minutes",
+        "The deposit and its receipt confirm the visit",
+        "The appointment slip is the patient's proof of booking"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Reminder notices",
+      "items": [
+        "Reminder notices reach the patient 24 h and 2 h before the visit",
+        "The patient may reschedule until 2 h before"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Money rules",
+      "items": [
+        "A no-show forfeits the deposit",
+        "A cancellation more than 24 h before is refunded",
+        "Only confirmed visits go to the Clinic EMR"
+      ]
+    }
+  ]
+}

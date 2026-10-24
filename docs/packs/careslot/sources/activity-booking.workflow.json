@@ -1,0 +1,334 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "CareSlot Activity: Book or Reschedule a Visit",
+    "output": "activity-booking.html",
+    "locale": "en",
+    "visual_preset": "reference",
+    "quality_profile": "showcase",
+    "viewpoint": {
+      "level": "system",
+      "concern": "behavior",
+      "roles": [
+        "system-analyst",
+        "software-designer"
+      ],
+      "status": "current"
+    },
+    "trace": {
+      "id": "activity-booking",
+      "refines": [
+        "biz-process"
+      ],
+      "drills_into": [
+        {
+          "node": "confirm-booking",
+          "target": "seq-confirm.html",
+          "label": "Sequence: confirm booking"
+        }
+      ],
+      "elements": {
+        "reschedule": "OP-40"
+      }
+    },
+    "legend": {
+      "entries": {
+        "frontend": {
+          "label": "Patient action"
+        },
+        "backend": {
+          "label": "CareSlot action"
+        },
+        "security": {
+          "label": "Decision"
+        },
+        "external": {
+          "label": "End state"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "patient-lane",
+      "label": "Patient"
+    },
+    {
+      "id": "careslot-lane",
+      "label": "CareSlot"
+    }
+  ],
+  "phases": [
+    {
+      "id": "select-phase",
+      "label": "Select",
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "hold-phase",
+      "label": "Hold and pay",
+      "fromCol": 2,
+      "toCol": 4,
+      "variant": "emphasis"
+    },
+    {
+      "id": "confirm-phase",
+      "label": "Confirm",
+      "fromCol": 5,
+      "toCol": 5
+    }
+  ],
+  "mainPath": [
+    "pick-slot",
+    "slot-free",
+    "hold-slot",
+    "pay-deposit",
+    "hold-expired",
+    "payment-ok",
+    "confirm-booking",
+    "booked"
+  ],
+  "nodes": [
+    {
+      "id": "pick-slot",
+      "lane": "patient-lane",
+      "col": 0,
+      "type": "frontend",
+      "icon": "start",
+      "label": "Pick a slot",
+      "sublabel": "doctor and time",
+      "yOffset": -44
+    },
+    {
+      "id": "reschedule",
+      "lane": "patient-lane",
+      "col": 0,
+      "type": "frontend",
+      "icon": "calendar",
+      "label": "Reschedule",
+      "sublabel": "pick a new slot",
+      "tag": "OP-40",
+      "yOffset": 44
+    },
+    {
+      "id": "keep-visit",
+      "lane": "careslot-lane",
+      "col": 0,
+      "type": "external",
+      "icon": "stop",
+      "label": "Keep visit",
+      "sublabel": "change refused",
+      "yOffset": 44
+    },
+    {
+      "id": "pay-deposit",
+      "lane": "patient-lane",
+      "col": 3,
+      "type": "frontend",
+      "label": "Pay deposit",
+      "sublabel": "card details"
+    },
+    {
+      "id": "booked",
+      "lane": "patient-lane",
+      "col": 5,
+      "type": "external",
+      "icon": "success",
+      "label": "Visit booked",
+      "sublabel": "confirmation sent"
+    },
+    {
+      "id": "window-open",
+      "lane": "careslot-lane",
+      "col": 0,
+      "type": "security",
+      "icon": "decision",
+      "label": "Window open?",
+      "sublabel": "more than 2 h before",
+      "yOffset": -44
+    },
+    {
+      "id": "slot-free",
+      "lane": "careslot-lane",
+      "col": 1,
+      "type": "security",
+      "icon": "decision",
+      "label": "Slot still free?",
+      "sublabel": "check availability"
+    },
+    {
+      "id": "hold-slot",
+      "lane": "careslot-lane",
+      "col": 2,
+      "type": "backend",
+      "icon": "clock",
+      "label": "Hold slot",
+      "sublabel": "status held, 10 min"
+    },
+    {
+      "id": "hold-expired",
+      "lane": "careslot-lane",
+      "col": 3,
+      "type": "security",
+      "icon": "decision",
+      "label": "Hold expired?",
+      "sublabel": "past 10 min",
+      "yOffset": -44
+    },
+    {
+      "id": "release-slot",
+      "lane": "careslot-lane",
+      "col": 3,
+      "type": "external",
+      "icon": "failure",
+      "label": "Release slot",
+      "sublabel": "status expired",
+      "yOffset": 44
+    },
+    {
+      "id": "payment-ok",
+      "lane": "careslot-lane",
+      "col": 4,
+      "type": "security",
+      "icon": "decision",
+      "label": "Payment succeeded?",
+      "sublabel": "provider result",
+      "yOffset": -44
+    },
+    {
+      "id": "confirm-booking",
+      "lane": "careslot-lane",
+      "col": 5,
+      "type": "backend",
+      "icon": "success",
+      "label": "Confirm booking",
+      "sublabel": "status confirmed",
+      "yOffset": -44
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-pick-check",
+      "from": "pick-slot",
+      "to": "slot-free",
+      "label": "chosen slot",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-slot-taken",
+      "from": "slot-free",
+      "to": "pick-slot",
+      "label": "no: taken",
+      "role": "return"
+    },
+    {
+      "id": "e-slot-hold",
+      "from": "slot-free",
+      "to": "hold-slot",
+      "label": "yes",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-hold-pay",
+      "from": "hold-slot",
+      "to": "pay-deposit",
+      "label": "amount due",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-pay-check",
+      "from": "pay-deposit",
+      "to": "hold-expired",
+      "label": "submit",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-expired",
+      "from": "hold-expired",
+      "to": "release-slot",
+      "label": "yes",
+      "variant": "security",
+      "role": "error"
+    },
+    {
+      "id": "e-in-time",
+      "from": "hold-expired",
+      "to": "payment-ok",
+      "label": "no",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-declined",
+      "from": "payment-ok",
+      "to": "pay-deposit",
+      "label": "no: retry",
+      "variant": "security",
+      "role": "return"
+    },
+    {
+      "id": "e-paid",
+      "from": "payment-ok",
+      "to": "confirm-booking",
+      "label": "yes",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-confirmed",
+      "from": "confirm-booking",
+      "to": "booked",
+      "label": "confirmation",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-request-change",
+      "from": "reschedule",
+      "to": "window-open",
+      "label": "new slot"
+    },
+    {
+      "id": "e-window-yes",
+      "from": "window-open",
+      "to": "slot-free",
+      "label": "yes",
+      "role": "branch"
+    },
+    {
+      "id": "e-window-no",
+      "from": "window-open",
+      "to": "keep-visit",
+      "label": "no",
+      "variant": "security",
+      "role": "error"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Booking path",
+      "items": [
+        "A free slot is held for 10 minutes",
+        "The booking is confirmed only after the payment succeeds"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Alternate paths",
+      "items": [
+        "Slot taken: the patient picks another slot",
+        "Payment declined: retry while the hold is still valid",
+        "Hold expired: the slot is released and the appointment expires"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Reschedule",
+      "items": [
+        "Allowed until 2 h before the visit",
+        "A reschedule reuses the hold and confirm path for the new slot",
+        "Under 2 h left, the original visit stays"
+      ]
+    }
+  ]
+}

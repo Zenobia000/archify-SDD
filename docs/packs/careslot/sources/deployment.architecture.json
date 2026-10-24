@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "CareSlot Deployment (target)",
+    "output": "deployment.html",
+    "locale": "en",
+    "visual_preset": "reference",
+    "quality_profile": "showcase",
+    "viewpoint": { "level": "system", "concern": "structure", "c4_level": "deployment", "roles": ["architect", "operator"], "status": "target" },
+    "trace": {
+      "id": "deployment",
+      "refines": ["c4-containers"],
+      "elements": {
+        "booking-api": "C-20",
+        "reminder-worker": "C-21",
+        "event-bus": "C-30",
+        "booking-db": "C-40",
+        "slot-cache": "C-41"
+      }
+    },
+    "legend": {
+      "entries": {
+        "frontend": { "label": "Static web app" },
+        "cloud": { "label": "Managed edge / load balancer" },
+        "backend": { "label": "Container on Kubernetes" },
+        "database": { "label": "Managed data store" },
+        "messagebus": { "label": "Managed message broker" },
+        "external": { "label": "External system" }
+      }
+    }
+  },
+  "components": [
+    { "id": "idp", "type": "external", "label": "Identity Provider", "sublabel": "[External] OIDC", "pos": [540, 40], "size": [170, 64] },
+    { "id": "payment-provider", "type": "external", "label": "Payment Provider", "sublabel": "[External] deposits", "pos": [740, 40], "size": [170, 64] },
+
+    { "id": "patient-web", "type": "frontend", "label": "Patient Web App", "sublabel": "static bundle", "pos": [40, 210], "size": [170, 64] },
+    { "id": "staff-console", "type": "frontend", "label": "Front-desk Console", "sublabel": "static bundle", "pos": [40, 350], "size": [170, 64] },
+
+    { "id": "ingress", "type": "cloud", "label": "Load Balancer", "sublabel": "TLS :443 · ingress", "pos": [330, 210], "size": [170, 204] },
+    { "id": "booking-api", "type": "backend", "label": "Booking API", "sublabel": "k8s Deployment · Node.js", "pos": [620, 276], "size": [190, 72] },
+    { "id": "reminder-worker", "type": "backend", "label": "Reminder Worker", "sublabel": "k8s Deployment · Node.js", "pos": [900, 276], "size": [190, 72] },
+    { "id": "slot-cache", "type": "database", "label": "Slot Cache", "sublabel": "Managed Redis", "pos": [330, 500], "size": [170, 64] },
+    { "id": "booking-db", "type": "database", "label": "Booking DB", "sublabel": "Managed PostgreSQL", "pos": [630, 500], "size": [170, 64] },
+    { "id": "event-bus", "type": "messagebus", "label": "Event Bus", "sublabel": "Managed RabbitMQ", "pos": [910, 500], "size": [170, 64] },
+
+    { "id": "messaging-provider", "type": "external", "label": "Messaging Provider", "sublabel": "[External] SMS + LINE", "pos": [1240, 276], "size": [170, 72] },
+    { "id": "clinic-emr", "type": "external", "label": "Clinic EMR", "sublabel": "[External] medical record", "pos": [940, 40], "size": [170, 64] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "CDN · static hosting", "wraps": ["patient-web", "staff-console"], "pad": 20 },
+    { "kind": "region", "label": "Cloud region (primary)", "wraps": ["ingress", "booking-api", "reminder-worker", "slot-cache", "booking-db", "event-bus"], "pad": 48 },
+    { "kind": "region", "label": "VPC", "wraps": ["ingress", "booking-api", "reminder-worker", "slot-cache", "booking-db", "event-bus"], "pad": 32 },
+    { "kind": "security-group", "label": "Public subnet", "wraps": ["ingress"], "pad": 14 },
+    { "kind": "region", "label": "Kubernetes cluster", "wraps": ["booking-api", "reminder-worker"], "pad": 16 },
+    { "kind": "security-group", "label": "Private data subnet", "wraps": ["slot-cache", "booking-db", "event-bus"], "pad": 16 }
+  ],
+  "connections": [
+    { "id": "web-to-lb", "from": "patient-web", "to": "ingress", "label": "API · HTTPS", "variant": "emphasis" },
+    { "id": "console-to-lb", "from": "staff-console", "to": "ingress", "label": "API · HTTPS" },
+    { "id": "lb-to-api", "from": "ingress", "to": "booking-api", "label": "Routes · HTTP", "variant": "emphasis" },
+    { "id": "api-to-idp", "from": "booking-api", "to": "idp", "label": "JWKS · OIDC", "variant": "security" },
+    { "id": "api-to-payment", "from": "booking-api", "to": "payment-provider", "label": "HTTPS egress", "variant": "emphasis" },
+    { "id": "api-to-db", "from": "booking-api", "to": "booking-db", "label": "SQL · TLS", "variant": "emphasis" },
+    { "id": "api-to-cache", "from": "booking-api", "to": "slot-cache", "label": "RESP · TLS" },
+    { "id": "api-to-bus", "from": "booking-api", "to": "event-bus", "label": "AMQP · TLS", "variant": "dashed" },
+    { "id": "bus-to-worker", "from": "event-bus", "to": "reminder-worker", "label": "AMQP", "variant": "dashed" },
+    { "id": "worker-to-messaging", "from": "reminder-worker", "to": "messaging-provider", "label": "HTTPS egress", "variant": "dashed" },
+    { "id": "worker-to-emr", "from": "reminder-worker", "to": "clinic-emr", "label": "HTTPS egress", "variant": "dashed" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Edge", "items": ["Both SPAs are static bundles served from a CDN", "Browsers call the API through the load balancer on TLS :443"] },
+    { "dot": "emerald", "title": "Compute", "items": ["Booking API and Reminder Worker run as Kubernetes Deployments in private subnets", "Outbound calls to providers leave through controlled HTTPS egress; payment webhooks enter through the load balancer"] },
+    { "dot": "violet", "title": "Managed data", "items": ["PostgreSQL, Redis and RabbitMQ are managed services in a private data subnet", "Status: target topology, not yet fully provisioned"] }
+  ]
+}

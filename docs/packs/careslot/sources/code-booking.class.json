@@ -1,0 +1,207 @@
+{
+  "schema_version": 1,
+  "diagram_type": "class",
+  "meta": {
+    "title": "Booking Service domain model",
+    "locale": "en",
+    "output": "code-booking.html",
+    "visual_preset": "reference",
+    "quality_profile": "showcase",
+    "viewpoint": {
+      "level": "implementation",
+      "concern": "structure",
+      "c4_level": "code",
+      "roles": ["software-designer", "developer"],
+      "status": "current"
+    },
+    "trace": {
+      "id": "code-booking",
+      "refines": ["c4-booking-api"],
+      "elements": {
+        "appointment": "D-10",
+        "slot": "D-11",
+        "payment": "D-12"
+      }
+    }
+  },
+  "layout": {
+    "mode": "grid"
+  },
+  "types": [
+    {
+      "id": "booking-repository",
+      "label": "BookingRepository",
+      "kind": "interface",
+      "sublabel": "SQL access to slots, appointments, outbox",
+      "row": 0,
+      "col": 0,
+      "methods": [
+        { "name": "lockSlot", "parameters": "id: SlotId", "returns": "Slot", "visibility": "public", "abstract": true },
+        { "name": "save", "parameters": "a: Appointment", "returns": "void", "visibility": "public", "abstract": true },
+        { "name": "appendOutbox", "parameters": "e: OutboxEvent", "returns": "void", "visibility": "public", "abstract": true },
+        { "name": "inTransaction", "parameters": "work: Fn", "returns": "T", "visibility": "public", "abstract": true }
+      ]
+    },
+    {
+      "id": "booking-service",
+      "label": "BookingService",
+      "kind": "class",
+      "sublabel": "Hold, confirm, reschedule, cancel",
+      "row": 0,
+      "col": 1,
+      "attributes": [
+        { "name": "repo", "type": "BookingRepository", "visibility": "private" },
+        { "name": "payments", "type": "PaymentGateway", "visibility": "private" }
+      ],
+      "methods": [
+        { "name": "holdSlot", "parameters": "slot, patient", "returns": "Appointment", "visibility": "public" },
+        { "name": "confirmDeposit", "parameters": "intentId", "returns": "Appointment", "visibility": "public" },
+        { "name": "reschedule", "parameters": "id, slot", "returns": "Appointment", "visibility": "public" },
+        { "name": "cancel", "parameters": "id", "returns": "void", "visibility": "public" }
+      ]
+    },
+    {
+      "id": "payment-gateway",
+      "label": "PaymentGateway",
+      "kind": "interface",
+      "sublabel": "Deposit and refund contract",
+      "row": 0,
+      "col": 2,
+      "methods": [
+        { "name": "createDeposit", "parameters": "a: Appointment", "returns": "Payment", "visibility": "public", "abstract": true },
+        { "name": "refund", "parameters": "p: Payment", "returns": "Payment", "visibility": "public", "abstract": true },
+        { "name": "verifyWebhook", "parameters": "body, sig", "returns": "PaymentEvent", "visibility": "public", "abstract": true }
+      ]
+    },
+    {
+      "id": "outbox-event",
+      "label": "OutboxEvent",
+      "kind": "record",
+      "sublabel": "Row committed with the change",
+      "row": 1,
+      "col": 0,
+      "attributes": [
+        { "name": "id", "type": "bigint", "visibility": "public" },
+        { "name": "eventType", "type": "string", "visibility": "public" },
+        { "name": "payload", "type": "Json", "visibility": "public" },
+        { "name": "publishedAt", "type": "Instant?", "visibility": "public" }
+      ]
+    },
+    {
+      "id": "appointment",
+      "label": "Appointment",
+      "kind": "class",
+      "sublabel": "Aggregate root of a booking",
+      "row": 1,
+      "col": 1,
+      "attributes": [
+        { "name": "id", "type": "AppointmentId", "visibility": "public" },
+        { "name": "patientId", "type": "PatientId", "visibility": "public" },
+        { "name": "status", "type": "AppointmentStatus", "visibility": "public" },
+        { "name": "holdExpiresAt", "type": "Instant", "visibility": "public" },
+        { "name": "payments", "type": "Payment[]", "visibility": "private" }
+      ],
+      "methods": [
+        { "name": "confirm", "parameters": "p: Payment", "returns": "void", "visibility": "public" },
+        { "name": "cancel", "parameters": "now: Instant", "returns": "void", "visibility": "public" },
+        { "name": "isRefundable", "parameters": "now: Instant", "returns": "boolean", "visibility": "public" }
+      ]
+    },
+    {
+      "id": "payment-adapter",
+      "label": "PaymentAdapter",
+      "kind": "class",
+      "sublabel": "Payment Provider over HTTPS",
+      "row": 1,
+      "col": 2,
+      "attributes": [
+        { "name": "client", "type": "ProviderClient", "visibility": "private" }
+      ],
+      "methods": [
+        { "name": "createDeposit", "parameters": "a: Appointment", "returns": "Payment", "visibility": "public" },
+        { "name": "refund", "parameters": "p: Payment", "returns": "Payment", "visibility": "public" },
+        { "name": "verifyWebhook", "parameters": "body, sig", "returns": "PaymentEvent", "visibility": "public" }
+      ]
+    },
+    {
+      "id": "slot",
+      "label": "Slot",
+      "kind": "class",
+      "sublabel": "One doctor time window",
+      "row": 2,
+      "col": 0,
+      "attributes": [
+        { "name": "id", "type": "SlotId", "visibility": "public" },
+        { "name": "doctorId", "type": "DoctorId", "visibility": "public" },
+        { "name": "startsAt", "type": "Instant", "visibility": "public" },
+        { "name": "heldUntil", "type": "Instant?", "visibility": "public" }
+      ],
+      "methods": [
+        { "name": "hold", "parameters": "until: Instant", "returns": "void", "visibility": "public" },
+        { "name": "isOpen", "parameters": "now: Instant", "returns": "boolean", "visibility": "public" }
+      ]
+    },
+    {
+      "id": "appointment-status",
+      "label": "AppointmentStatus",
+      "kind": "enum",
+      "sublabel": "Lifecycle states",
+      "row": 2,
+      "col": 1,
+      "attributes": [
+        { "name": "held" },
+        { "name": "confirmed" },
+        { "name": "reminded" },
+        { "name": "checked_in" },
+        { "name": "completed" },
+        { "name": "expired" },
+        { "name": "cancelled" },
+        { "name": "no_show" }
+      ]
+    },
+    {
+      "id": "payment",
+      "label": "Payment",
+      "kind": "class",
+      "sublabel": "Deposit or refund record",
+      "row": 2,
+      "col": 2,
+      "attributes": [
+        { "name": "id", "type": "PaymentId", "visibility": "public" },
+        { "name": "kind", "type": "deposit | refund", "visibility": "public" },
+        { "name": "amount", "type": "Money", "visibility": "public" },
+        { "name": "providerIntentId", "type": "string", "visibility": "public" },
+        { "name": "status", "type": "PaymentStatus", "visibility": "public" }
+      ]
+    }
+  ],
+  "relationships": [
+    { "id": "service-uses-repo", "from": "booking-service", "to": "booking-repository", "kind": "dependency", "label": "persists via" },
+    { "id": "service-uses-gateway", "from": "booking-service", "to": "payment-gateway", "kind": "dependency", "label": "charges via" },
+    { "id": "service-manages-appointment", "from": "booking-service", "to": "appointment", "kind": "dependency", "label": "holds, confirms" },
+    { "id": "repo-appends-outbox", "from": "booking-repository", "to": "outbox-event", "kind": "dependency", "label": "appends" },
+    { "id": "adapter-implements-gateway", "from": "payment-adapter", "to": "payment-gateway", "kind": "realization" },
+    { "id": "appointment-reserves-slot", "from": "appointment", "to": "slot", "kind": "association", "label": "reserves 1" },
+    { "id": "appointment-has-status", "from": "appointment", "to": "appointment-status", "kind": "association", "label": "status" },
+    { "id": "appointment-owns-payments", "from": "appointment", "to": "payment", "kind": "composition", "label": "owns 0..*" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Ports and adapters",
+      "items": [
+        "BookingService depends only on the BookingRepository and PaymentGateway interfaces.",
+        "PaymentAdapter is the one production PaymentGateway; tests swap in a fake."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Aggregate rules",
+      "items": [
+        "Appointment owns its payments: a deposit, and a refund when cancelled more than 24 h ahead.",
+        "confirm() is only legal from held and only with a succeeded deposit.",
+        "confirmDeposit saves the appointment and appends an OutboxEvent inside one inTransaction call."
+      ]
+    }
+  ]
+}

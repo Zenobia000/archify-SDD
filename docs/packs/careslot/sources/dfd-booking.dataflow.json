@@ -1,0 +1,292 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "CareSlot Booking DFD Level 1",
+    "output": "dfd-booking.html",
+    "locale": "en",
+    "visual_preset": "reference",
+    "quality_profile": "showcase",
+    "viewpoint": {
+      "level": "system",
+      "concern": "data",
+      "roles": [
+        "system-analyst"
+      ],
+      "status": "current"
+    },
+    "trace": {
+      "id": "dfd-booking",
+      "refines": [
+        "biz-data-flow"
+      ],
+      "drills_into": [
+        {
+          "node": "appointments-store",
+          "target": "schema-booking.html",
+          "focus": "appointments",
+          "label": "Booking schema"
+        }
+      ],
+      "elements": {
+        "reserve-slot": "OP-10",
+        "take-deposit": "OP-20",
+        "schedule-reminders": "OP-30",
+        "appointments-store": "D-10",
+        "slots-store": "D-11",
+        "payments-store": "D-12"
+      }
+    },
+    "legend": {
+      "entries": {
+        "emphasis": {
+          "label": "Booking data flow"
+        },
+        "default": {
+          "label": "Data flow"
+        },
+        "security": {
+          "label": "Payment data"
+        },
+        "dashed": {
+          "label": "Scheduled message"
+        },
+        "database": {
+          "label": "Data store"
+        }
+      }
+    }
+  },
+  "stages": [
+    {
+      "label": "External entity"
+    },
+    {
+      "label": "Booking processes"
+    },
+    {
+      "label": "Data stores"
+    },
+    {
+      "label": "Reminder process"
+    },
+    {
+      "label": "External entities"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "patient",
+      "type": "external",
+      "icon": "person",
+      "label": "Patient",
+      "sublabel": "external entity",
+      "stage": 0,
+      "row": 2
+    },
+    {
+      "id": "payment-provider",
+      "type": "external",
+      "label": "Payment Provider",
+      "sublabel": "card deposits",
+      "stage": 4,
+      "row": 4
+    },
+    {
+      "id": "search-slots",
+      "type": "backend",
+      "label": "1.0 Search slots",
+      "sublabel": "open slots per doctor",
+      "stage": 1,
+      "row": 0
+    },
+    {
+      "id": "reserve-slot",
+      "type": "backend",
+      "label": "2.0 Reserve slot",
+      "sublabel": "10-minute hold",
+      "stage": 1,
+      "row": 2
+    },
+    {
+      "id": "take-deposit",
+      "type": "backend",
+      "label": "3.0 Take deposit",
+      "sublabel": "confirms on success",
+      "stage": 1,
+      "row": 4
+    },
+    {
+      "id": "slots-store",
+      "type": "database",
+      "label": "D1 Slots",
+      "sublabel": "open and held slots",
+      "stage": 2,
+      "row": 0
+    },
+    {
+      "id": "appointments-store",
+      "type": "database",
+      "label": "D2 Appointments",
+      "sublabel": "status, patient, slot",
+      "stage": 2,
+      "row": 2
+    },
+    {
+      "id": "payments-store",
+      "type": "database",
+      "label": "D3 Payments",
+      "sublabel": "deposits, refunds",
+      "stage": 2,
+      "row": 3
+    },
+    {
+      "id": "schedule-reminders",
+      "type": "backend",
+      "icon": "clock",
+      "label": "4.0 Reminders",
+      "sublabel": "schedules 24 h and 2 h before",
+      "stage": 3,
+      "row": 2
+    },
+    {
+      "id": "messaging-provider",
+      "type": "external",
+      "label": "Messaging Provider",
+      "sublabel": "SMS and LINE",
+      "stage": 4,
+      "row": 2
+    }
+  ],
+  "flows": [
+    {
+      "id": "search-criteria",
+      "from": "patient",
+      "to": "search-slots",
+      "label": "search criteria",
+      "classification": "doctor, date"
+    },
+    {
+      "id": "open-slots",
+      "from": "search-slots",
+      "to": "patient",
+      "label": "open slots",
+      "classification": "slot list"
+    },
+    {
+      "id": "free-slots",
+      "from": "slots-store",
+      "to": "search-slots",
+      "label": "free slots",
+      "classification": "read"
+    },
+    {
+      "id": "slot-choice",
+      "from": "patient",
+      "to": "reserve-slot",
+      "label": "slot choice",
+      "classification": "patient, slot",
+      "variant": "emphasis",
+      "route": "straight"
+    },
+    {
+      "id": "slot-hold",
+      "from": "reserve-slot",
+      "to": "slots-store",
+      "label": "slot hold",
+      "classification": "expires in 10 min"
+    },
+    {
+      "id": "held-appointment",
+      "from": "reserve-slot",
+      "to": "appointments-store",
+      "label": "held appointment",
+      "classification": "status held",
+      "variant": "emphasis"
+    },
+    {
+      "id": "card-deposit",
+      "from": "patient",
+      "to": "take-deposit",
+      "label": "card deposit",
+      "classification": "payment data",
+      "variant": "security"
+    },
+    {
+      "id": "charge-request",
+      "from": "take-deposit",
+      "to": "payment-provider",
+      "label": "charge request",
+      "classification": "amount, token",
+      "variant": "security",
+      "route": "straight"
+    },
+    {
+      "id": "charge-result",
+      "from": "payment-provider",
+      "to": "take-deposit",
+      "label": "charge result",
+      "classification": "paid or declined",
+      "variant": "security",
+      "route": "bottom-channel"
+    },
+    {
+      "id": "payment-record",
+      "from": "take-deposit",
+      "to": "payments-store",
+      "label": "payment record",
+      "classification": "charge result"
+    },
+    {
+      "id": "confirmed-status",
+      "from": "take-deposit",
+      "to": "appointments-store",
+      "label": "confirmation",
+      "classification": "status confirmed",
+      "variant": "emphasis"
+    },
+    {
+      "id": "confirmed-visits",
+      "from": "appointments-store",
+      "to": "schedule-reminders",
+      "label": "confirmed visits",
+      "classification": "time, contact",
+      "variant": "emphasis"
+    },
+    {
+      "id": "reminder-message",
+      "from": "schedule-reminders",
+      "to": "messaging-provider",
+      "label": "reminder message",
+      "classification": "SMS or LINE",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Booking path",
+      "items": [
+        "2.0 holds the slot in D1 and writes a held appointment to D2",
+        "3.0 marks the appointment confirmed only after the charge succeeds",
+        "4.0 reads confirmed visits from D2 for reminders 24 h and 2 h before"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Payment data",
+      "items": [
+        "Card details go to the Payment Provider as a charge request",
+        "D3 keeps the charge result for refunds and forfeits"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Outside this level",
+      "items": [
+        "The Messaging Provider delivers the reminder to the patient",
+        "Reschedule and cancel reuse 2.0 and 3.0 against D1, D2 and D3"
+      ]
+    }
+  ]
+}

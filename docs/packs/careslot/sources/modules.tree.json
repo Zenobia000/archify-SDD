@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "diagram_type": "tree",
+  "meta": {
+    "title": "Booking API Module Decomposition",
+    "output": "modules.html",
+    "locale": "en",
+    "visual_preset": "reference",
+    "quality_profile": "showcase",
+    "viewpoint": { "level": "implementation", "concern": "structure", "roles": ["software-designer"], "status": "current" },
+    "trace": { "id": "modules", "refines": ["c4-booking-api"] }
+  },
+  "layout": { "direction": "right" },
+  "nodes": [
+    { "id": "repo-root", "label": "booking-api/", "sublabel": "Booking API codebase · Node.js" },
+
+    { "id": "src", "label": "src/", "parent": "repo-root", "sublabel": "runtime modules" },
+    { "id": "src-http", "label": "http/", "parent": "src", "sublabel": "API Router, Auth Guard" },
+    { "id": "http-router", "label": "router", "parent": "src-http", "sublabel": "REST endpoints, request validation" },
+    { "id": "http-guards", "label": "guards", "parent": "src-http", "sublabel": "OIDC token, clinic/role scope" },
+
+    { "id": "src-booking", "label": "booking/", "parent": "src", "sublabel": "Booking Service" },
+    { "id": "booking-service-module", "label": "service", "parent": "src-booking", "sublabel": "hold, confirm, reschedule, cancel" },
+    { "id": "booking-policies", "label": "policies", "parent": "src-booking", "sublabel": "10-min hold, refund, no-show rules" },
+
+    { "id": "src-availability", "label": "availability/", "parent": "src", "sublabel": "Availability Service" },
+    { "id": "availability-slots", "label": "slots", "parent": "src-availability", "sublabel": "open slots per doctor" },
+    { "id": "availability-cache", "label": "cache", "parent": "src-availability", "sublabel": "Slot Cache reads, DB fallback" },
+
+    { "id": "src-payments", "label": "payments/", "parent": "src", "sublabel": "Payment Adapter" },
+    { "id": "payments-adapter", "label": "adapter", "parent": "src-payments", "sublabel": "deposits and refunds" },
+    { "id": "payments-webhook", "label": "webhook", "parent": "src-payments", "sublabel": "payment result callback" },
+
+    { "id": "src-persistence", "label": "persistence/", "parent": "src", "sublabel": "Booking Repository" },
+    { "id": "persistence-repositories", "label": "repositories", "parent": "src-persistence", "sublabel": "appointments, slots, payments" },
+    { "id": "persistence-migrations", "label": "migrations", "parent": "src-persistence", "sublabel": "PostgreSQL schema versions" },
+
+    { "id": "src-outbox", "label": "outbox/", "parent": "src", "sublabel": "Outbox Publisher" },
+    { "id": "outbox-relay", "label": "publisher", "parent": "src-outbox", "sublabel": "relays outbox rows over AMQP" },
+
+    { "id": "test", "label": "test/", "parent": "repo-root", "sublabel": "automated checks" },
+    { "id": "test-unit", "label": "unit/", "parent": "test", "sublabel": "booking rules and policies" },
+    { "id": "test-integration", "label": "integration/", "parent": "test", "sublabel": "repositories and outbox" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Reading the tree", "items": ["Links mean containment only, not calls", "Each src/ folder owns one Booking API component from the C4 L3 diagram"] },
+    { "dot": "emerald", "title": "Boundaries", "items": ["persistence/ owns SQL access; outbox/ only reads the outbox table", "Only payments/ talks to the Payment Provider", "outbox/ is the only publisher to the Event Bus"] }
+  ]
+}

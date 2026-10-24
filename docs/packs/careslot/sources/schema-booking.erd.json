@@ -1,0 +1,481 @@
+{
+  "schema_version": 1,
+  "diagram_type": "erd",
+  "meta": {
+    "title": "CareSlot booking schema",
+    "locale": "en",
+    "output": "schema-booking.html",
+    "visual_preset": "reference",
+    "quality_profile": "showcase",
+    "viewpoint": {
+      "level": "implementation",
+      "concern": "data",
+      "roles": [
+        "software-designer",
+        "developer"
+      ],
+      "status": "current"
+    },
+    "trace": {
+      "id": "schema-booking",
+      "refines": [
+        "dfd-booking"
+      ],
+      "elements": {
+        "appointments": "D-10",
+        "slots": "D-11",
+        "payments": "D-12"
+      }
+    },
+    "views": [
+      {
+        "id": "booking-core",
+        "label": "Booking core",
+        "focus": [
+          "appointments",
+          "slots",
+          "patients",
+          "doctors"
+        ],
+        "note": "An appointment joins one patient to one slot; each slot belongs to one doctor."
+      },
+      {
+        "id": "deposit",
+        "label": "Deposits and refunds",
+        "focus": [
+          "payments",
+          "appointments"
+        ],
+        "note": "Each appointment carries a deposit row and, when refunded, a refund row."
+      },
+      {
+        "id": "messaging",
+        "label": "Reminders and outbox",
+        "focus": [
+          "reminders",
+          "outbox_events",
+          "appointments"
+        ],
+        "note": "The outbox row is written in the same transaction as the confirmed appointment."
+      }
+    ]
+  },
+  "layout": {
+    "mode": "grid",
+    "gapX": 84,
+    "gapY": 40
+  },
+  "entities": [
+    {
+      "id": "patients",
+      "label": "patients",
+      "tag": "parties",
+      "row": 0,
+      "col": 0,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "key": "pk"
+        },
+        {
+          "name": "clinic_id",
+          "type": "uuid"
+        },
+        {
+          "name": "idp_subject",
+          "type": "varchar(128)",
+          "key": "uk"
+        },
+        {
+          "name": "full_name",
+          "type": "varchar(120)"
+        },
+        {
+          "name": "phone_e164",
+          "type": "varchar(16)"
+        },
+        {
+          "name": "line_user_id",
+          "type": "varchar(64)"
+        },
+        {
+          "name": "preferred_channel",
+          "type": "varchar(8)"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz"
+        }
+      ]
+    },
+    {
+      "id": "doctors",
+      "label": "doctors",
+      "tag": "parties",
+      "row": 1,
+      "col": 0,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "key": "pk"
+        },
+        {
+          "name": "clinic_id",
+          "type": "uuid"
+        },
+        {
+          "name": "display_name",
+          "type": "varchar(120)"
+        },
+        {
+          "name": "specialty",
+          "type": "varchar(64)"
+        },
+        {
+          "name": "active",
+          "type": "boolean"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz"
+        }
+      ]
+    },
+    {
+      "id": "appointments",
+      "label": "appointments",
+      "tag": "booking",
+      "row": 0,
+      "col": 1,
+      "width": 250,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "key": "pk"
+        },
+        {
+          "name": "patient_id",
+          "type": "uuid",
+          "key": "fk",
+          "references": "patients.id"
+        },
+        {
+          "name": "slot_id",
+          "type": "uuid",
+          "key": "fk",
+          "references": "slots.id"
+        },
+        {
+          "name": "status",
+          "type": "varchar(16)"
+        },
+        {
+          "name": "hold_expires_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "deposit_amount",
+          "type": "numeric(10,2)"
+        },
+        {
+          "name": "currency",
+          "type": "char(3)"
+        },
+        {
+          "name": "confirmed_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "cancelled_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "emr_visit_ref",
+          "type": "varchar(64)"
+        },
+        {
+          "name": "version",
+          "type": "integer"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz"
+        }
+      ]
+    },
+    {
+      "id": "slots",
+      "label": "slots",
+      "tag": "booking",
+      "row": 1,
+      "col": 1,
+      "width": 250,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "key": "pk"
+        },
+        {
+          "name": "doctor_id",
+          "type": "uuid",
+          "key": [
+            "fk",
+            "uk"
+          ],
+          "references": "doctors.id"
+        },
+        {
+          "name": "starts_at",
+          "type": "timestamptz",
+          "key": "uk"
+        },
+        {
+          "name": "ends_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "status",
+          "type": "varchar(16)"
+        },
+        {
+          "name": "held_until",
+          "type": "timestamptz"
+        },
+        {
+          "name": "version",
+          "type": "integer"
+        }
+      ]
+    },
+    {
+      "id": "payments",
+      "label": "payments",
+      "tag": "billing",
+      "row": 0,
+      "col": 2,
+      "width": 280,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "key": "pk"
+        },
+        {
+          "name": "appointment_id",
+          "type": "uuid",
+          "key": "fk",
+          "references": "appointments.id"
+        },
+        {
+          "name": "kind",
+          "type": "varchar(16)"
+        },
+        {
+          "name": "amount",
+          "type": "numeric(10,2)"
+        },
+        {
+          "name": "currency",
+          "type": "char(3)"
+        },
+        {
+          "name": "provider_intent_id",
+          "type": "varchar(64)",
+          "key": "uk"
+        },
+        {
+          "name": "status",
+          "type": "varchar(16)"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "settled_at",
+          "type": "timestamptz"
+        }
+      ]
+    },
+    {
+      "id": "reminders",
+      "label": "reminders",
+      "tag": "messaging",
+      "row": 1,
+      "col": 2,
+      "width": 280,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "key": "pk"
+        },
+        {
+          "name": "appointment_id",
+          "type": "uuid",
+          "key": [
+            "fk",
+            "uk"
+          ],
+          "references": "appointments.id"
+        },
+        {
+          "name": "lead_time",
+          "type": "varchar(4)",
+          "key": "uk"
+        },
+        {
+          "name": "channel",
+          "type": "varchar(8)"
+        },
+        {
+          "name": "send_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "status",
+          "type": "varchar(16)"
+        },
+        {
+          "name": "provider_message_id",
+          "type": "varchar(64)"
+        },
+        {
+          "name": "sent_at",
+          "type": "timestamptz"
+        }
+      ]
+    },
+    {
+      "id": "outbox_events",
+      "label": "outbox_events",
+      "tag": "messaging",
+      "row": 2,
+      "col": 2,
+      "width": 280,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "pk"
+        },
+        {
+          "name": "appointment_id",
+          "type": "uuid",
+          "key": "fk",
+          "references": "appointments.id"
+        },
+        {
+          "name": "event_type",
+          "type": "varchar(64)"
+        },
+        {
+          "name": "payload",
+          "type": "jsonb"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "published_at",
+          "type": "timestamptz"
+        },
+        {
+          "name": "attempts",
+          "type": "integer"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "appointments_patients",
+      "from": "appointments",
+      "to": "patients",
+      "label": "booked by",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one"
+    },
+    {
+      "id": "appointments_slots",
+      "from": "appointments",
+      "to": "slots",
+      "label": "reserves",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one"
+    },
+    {
+      "id": "slots_doctors",
+      "from": "slots",
+      "to": "doctors",
+      "label": "offered by",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one"
+    },
+    {
+      "id": "payments_appointments",
+      "from": "payments",
+      "to": "appointments",
+      "label": "settles",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one"
+    },
+    {
+      "id": "reminders_appointments",
+      "from": "reminders",
+      "to": "appointments",
+      "label": "reminds",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one"
+    },
+    {
+      "id": "outbox_appointments",
+      "from": "outbox_events",
+      "to": "appointments",
+      "label": "announces",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one",
+      "identifying": false
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Keys and uniqueness",
+      "items": [
+        "slots is unique on (doctor_id, starts_at): one doctor cannot open two slots at the same start.",
+        "payments.provider_intent_id is unique, so a replayed provider webhook cannot settle twice.",
+        "reminders is unique on (appointment_id, lead_time): one 24h and one 2h reminder per visit."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Holds and states",
+      "items": [
+        "A hold sets slots.held_until and appointments.hold_expires_at to now + 10 minutes.",
+        "appointments.status moves held, confirmed, reminded, checked_in, completed; or expired, cancelled, no_show.",
+        "version columns give optimistic locking on slot and appointment updates."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Outbox",
+      "items": [
+        "Confirming writes the appointment update and an outbox_events row in one transaction.",
+        "published_at stays null until the Outbox Publisher has delivered the event to the Event Bus.",
+        "The outbox link is non-identifying: events outlive retries and are drawn dashed."
+      ]
+    }
+  ]
+}

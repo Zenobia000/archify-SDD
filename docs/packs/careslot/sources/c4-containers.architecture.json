@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "CareSlot Containers (C4 L2)",
+    "output": "c4-containers.html",
+    "locale": "en",
+    "visual_preset": "reference",
+    "quality_profile": "showcase",
+    "viewpoint": { "level": "system", "concern": "structure", "c4_level": "container", "roles": ["architect"], "status": "current" },
+    "trace": {
+      "id": "c4-containers",
+      "refines": ["c4-context"],
+      "drills_into": [
+        { "node": "booking-api", "target": "c4-booking-api.html", "focus": "booking-service", "label": "Components (C4 L3)" },
+        { "node": "booking-db", "target": "schema-booking.html", "focus": "appointments", "label": "Booking schema" }
+      ],
+      "elements": {
+        "patient-web": "C-10",
+        "staff-console": "C-11",
+        "booking-api": "C-20",
+        "reminder-worker": "C-21",
+        "event-bus": "C-30",
+        "booking-db": "C-40",
+        "slot-cache": "C-41"
+      }
+    },
+    "legend": {
+      "entries": {
+        "frontend": { "label": "Container: web app" },
+        "backend": { "label": "Container: service" },
+        "database": { "label": "Container: data store" },
+        "messagebus": { "label": "Container: message broker" },
+        "external": { "label": "Person / external system" }
+      }
+    }
+  },
+  "components": [
+    { "id": "patient", "type": "external", "icon": "person", "label": "Patient", "sublabel": "[Person]", "pos": [40, 40], "size": [160, 60] },
+    { "id": "front-desk", "type": "external", "icon": "person", "label": "Front-desk staff", "sublabel": "[Person]", "pos": [300, 40], "size": [160, 60] },
+    { "id": "doctor", "type": "external", "icon": "person", "label": "Doctor", "sublabel": "[Person]", "pos": [480, 40], "size": [160, 60] },
+    { "id": "clinic-admin", "type": "external", "icon": "person", "label": "Clinic admin", "sublabel": "[Person]", "pos": [660, 40], "size": [160, 60] },
+
+    { "id": "patient-web", "type": "frontend", "label": "Patient Web App", "sublabel": "React SPA", "pos": [40, 200], "size": [160, 64] },
+    { "id": "staff-console", "type": "frontend", "label": "Front-desk Console", "sublabel": "React SPA", "pos": [480, 200], "size": [160, 64] },
+    { "id": "booking-api", "type": "backend", "label": "Booking API", "sublabel": "Node.js · REST/JSON", "pos": [270, 370], "size": [290, 72] },
+    { "id": "slot-cache", "type": "database", "label": "Slot Cache", "sublabel": "Redis", "tag": "partial", "pos": [40, 540], "size": [160, 64] },
+    { "id": "booking-db", "type": "database", "label": "Booking DB", "sublabel": "PostgreSQL", "pos": [280, 540], "size": [160, 64] },
+    { "id": "event-bus", "type": "messagebus", "label": "Event Bus", "sublabel": "RabbitMQ", "pos": [520, 540], "size": [160, 64] },
+    { "id": "reminder-worker", "type": "backend", "label": "Reminder Worker", "sublabel": "Node.js", "pos": [520, 710], "size": [160, 64] },
+
+    { "id": "idp", "type": "external", "label": "Identity Provider", "sublabel": "[External] OIDC", "pos": [920, 200], "size": [170, 64] },
+    { "id": "payment-provider", "type": "external", "label": "Payment Provider", "sublabel": "[External] deposits", "pos": [920, 370], "size": [170, 72] },
+    { "id": "clinic-emr", "type": "external", "label": "Clinic EMR", "sublabel": "[External] medical record", "pos": [920, 540], "size": [170, 64] },
+    { "id": "messaging-provider", "type": "external", "label": "Messaging Provider", "sublabel": "[External] SMS + LINE", "pos": [920, 710], "size": [170, 64] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "CareSlot [Software System]", "wraps": ["patient-web", "staff-console", "booking-api", "slot-cache", "booking-db", "event-bus", "reminder-worker"], "pad": 24 }
+  ],
+  "connections": [
+    { "id": "patient-uses-web", "from": "patient", "to": "patient-web", "label": "Books visits · HTTPS", "variant": "emphasis" },
+    { "id": "front-desk-uses-console", "from": "front-desk", "to": "staff-console", "label": "Check-in · HTTPS" },
+    { "id": "doctor-uses-console", "from": "doctor", "to": "staff-console", "label": "Schedule · HTTPS" },
+    { "id": "admin-uses-console", "from": "clinic-admin", "to": "staff-console", "label": "Policies · HTTPS" },
+    { "id": "web-calls-api", "from": "patient-web", "to": "booking-api", "label": "Book, pay · HTTPS/JSON", "variant": "emphasis" },
+    { "id": "console-calls-api", "from": "staff-console", "to": "booking-api", "label": "Manage · HTTPS/JSON" },
+    { "id": "api-verifies-token", "from": "booking-api", "to": "idp", "label": "Verifies tokens · OIDC", "variant": "security" },
+    { "id": "api-charges", "from": "booking-api", "to": "payment-provider", "label": "Deposits · HTTPS, result · webhook", "variant": "emphasis" },
+    { "id": "api-reads-cache", "from": "booking-api", "to": "slot-cache", "label": "Open slots · RESP" },
+    { "id": "api-writes-db", "from": "booking-api", "to": "booking-db", "label": "Reads, writes · SQL", "variant": "emphasis" },
+    { "id": "api-publishes", "from": "booking-api", "to": "event-bus", "label": "Outbox events · AMQP", "variant": "dashed" },
+    { "id": "bus-delivers", "from": "event-bus", "to": "reminder-worker", "label": "Consumes · AMQP", "variant": "dashed" },
+    { "id": "worker-pushes-emr", "from": "reminder-worker", "to": "clinic-emr", "label": "Confirmed visits · HTTPS", "variant": "dashed" },
+    { "id": "worker-sends", "from": "reminder-worker", "to": "messaging-provider", "label": "SMS, LINE · HTTPS", "variant": "dashed" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Runtime path", "items": ["Patients book and pay through the Patient Web App", "Booking API holds the slot, takes the deposit, and confirms only after the payment webhook", "Slot Cache serves open slots; Booking DB stays the source of truth"] },
+    { "dot": "violet", "title": "Async delivery", "items": ["Booking API writes events to an outbox and publishes them over AMQP", "Reminder Worker sends 24 h and 2 h reminders and pushes confirmed visits to the EMR"] },
+    { "dot": "rose", "title": "Identity", "items": ["Both SPAs sign users in with OIDC at the Identity Provider", "Booking API verifies tokens and clinic/role scope on every call"] }
+  ]
+}

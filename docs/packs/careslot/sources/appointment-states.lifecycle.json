@@ -1,0 +1,192 @@
+{
+  "schema_version": 3,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "CareSlot Appointment State Machine",
+    "output": "appointment-states.html",
+    "locale": "en",
+    "visual_preset": "reference",
+    "quality_profile": "showcase",
+    "viewpoint": {
+      "level": "system",
+      "concern": "behavior",
+      "roles": [
+        "system-analyst",
+        "software-designer"
+      ],
+      "status": "current"
+    },
+    "trace": {
+      "id": "appointment-states",
+      "refines": [
+        "activity-booking"
+      ]
+    }
+  },
+  "mainPath": [
+    "held",
+    "confirmed",
+    "reminded",
+    "checked_in",
+    "completed"
+  ],
+  "states": [
+    {
+      "id": "held",
+      "type": "start",
+      "label": "held",
+      "sublabel": "slot reserved",
+      "tag": "10 min hold",
+      "step": "01"
+    },
+    {
+      "id": "confirmed",
+      "type": "active",
+      "label": "confirmed",
+      "sublabel": "deposit paid",
+      "tag": "pushed to EMR",
+      "step": "02"
+    },
+    {
+      "id": "reminded",
+      "type": "waiting",
+      "label": "reminded",
+      "sublabel": "24 h notice sent",
+      "tag": "awaiting visit",
+      "step": "03"
+    },
+    {
+      "id": "checked_in",
+      "type": "active",
+      "label": "checked_in",
+      "sublabel": "at front desk",
+      "tag": "visit day",
+      "step": "04"
+    },
+    {
+      "id": "completed",
+      "type": "success",
+      "label": "completed",
+      "sublabel": "consultation done",
+      "tag": "terminal",
+      "step": "05"
+    },
+    {
+      "id": "expired",
+      "type": "neutral",
+      "label": "expired",
+      "sublabel": "slot released",
+      "tag": "terminal"
+    },
+    {
+      "id": "cancelled",
+      "type": "neutral",
+      "label": "cancelled",
+      "sublabel": "slot released",
+      "tag": "terminal"
+    },
+    {
+      "id": "no_show",
+      "type": "failure",
+      "label": "no_show",
+      "sublabel": "deposit forfeited",
+      "tag": "terminal"
+    }
+  ],
+  "transitions": [
+    {
+      "id": "held-confirmed",
+      "from": "held",
+      "to": "confirmed",
+      "label": "[payment ok]",
+      "note": "within hold",
+      "variant": "emphasis"
+    },
+    {
+      "id": "confirmed-reminded",
+      "from": "confirmed",
+      "to": "reminded",
+      "label": "T-24 h",
+      "variant": "emphasis"
+    },
+    {
+      "id": "reminded-checked-in",
+      "from": "reminded",
+      "to": "checked_in",
+      "label": "arrives",
+      "variant": "emphasis"
+    },
+    {
+      "id": "checked-in-completed",
+      "from": "checked_in",
+      "to": "completed",
+      "label": "consult done",
+      "variant": "emphasis"
+    },
+    {
+      "id": "held-expired",
+      "from": "held",
+      "to": "expired",
+      "label": "[after 10 min]",
+      "note": "hold timeout without payment",
+      "variant": "dashed"
+    },
+    {
+      "id": "confirmed-cancelled",
+      "from": "confirmed",
+      "to": "cancelled",
+      "label": "cancel [>24 h]",
+      "note": "deposit refunded"
+    },
+    {
+      "id": "reminded-cancelled",
+      "from": "reminded",
+      "to": "cancelled",
+      "label": "cancel [<24 h]",
+      "note": "no refund"
+    },
+    {
+      "id": "reminded-confirmed",
+      "from": "reminded",
+      "to": "confirmed",
+      "label": "reschedule [>2 h]",
+      "note": "new slot, same deposit"
+    },
+    {
+      "id": "reminded-no-show",
+      "from": "reminded",
+      "to": "no_show",
+      "label": "[no arrival]",
+      "note": "deposit forfeited",
+      "variant": "security"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Main path",
+      "items": [
+        "An appointment starts held for 10 minutes",
+        "It becomes confirmed only after the deposit succeeds",
+        "Reminders go out 24 h and 2 h before the visit"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Deposit outcomes",
+      "items": [
+        "Cancelled more than 24 h before: refunded",
+        "Cancelled within 24 h: no refund",
+        "no_show: deposit forfeited"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Reschedule",
+      "items": [
+        "Allowed until 2 h before the visit",
+        "The appointment returns to confirmed for the new slot"
+      ]
+    }
+  ]
+}

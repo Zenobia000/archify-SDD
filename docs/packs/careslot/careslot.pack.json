@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "pack_type": "document-pack",
+  "id": "careslot",
+  "title": "CareSlot design documents",
+  "subtitle": "A fictional clinic appointment and reminder platform, documented from business process down to schema and code.",
+  "locale": "en",
+  "documents": [
+    {
+      "id": "BRD",
+      "kind": "BRD",
+      "title": "Business Requirements Document",
+      "summary": "Why CareSlot exists: how patients, front desk and doctors book visits, and which information and money move between them.",
+      "sections": [
+        { "id": "BRD-3", "title": "Business information flow", "artifacts": ["biz-data-flow"] },
+        { "id": "BRD-4", "title": "Book a visit process", "artifacts": ["biz-process"] }
+      ]
+    },
+    {
+      "id": "SRS",
+      "kind": "SRS",
+      "title": "Software Requirements Specification",
+      "summary": "What the system must do: booking and rescheduling flows, the data each process transforms, and appointment states.",
+      "sections": [
+        { "id": "SRS-4", "title": "Book or reschedule a visit", "artifacts": ["activity-booking"] },
+        { "id": "SRS-5", "title": "Booking data flows (DFD level 1)", "artifacts": ["dfd-booking"] },
+        { "id": "SRS-6", "title": "Appointment states", "artifacts": ["appointment-states"] }
+      ]
+    },
+    {
+      "id": "SAD",
+      "kind": "SAD",
+      "title": "Software Architecture Document",
+      "summary": "How CareSlot is shaped: its context, the containers inside it, and where they run.",
+      "sections": [
+        { "id": "SAD-2", "title": "System context", "artifacts": ["c4-context"] },
+        { "id": "SAD-4", "title": "Containers", "artifacts": ["c4-containers"] },
+        { "id": "SAD-7", "title": "Deployment", "artifacts": ["deployment"] }
+      ]
+    },
+    {
+      "id": "SDD",
+      "kind": "SDD",
+      "title": "Software Design Document",
+      "summary": "How the Booking API is built: modules, components, interactions, domain types and schema.",
+      "sections": [
+        { "id": "SDD-3", "title": "Module decomposition", "artifacts": ["modules"] },
+        { "id": "SDD-4", "title": "Booking API components and domain model", "artifacts": ["c4-booking-api", "code-booking"] },
+        { "id": "SDD-5", "title": "Confirm booking interaction", "artifacts": ["seq-confirm"] },
+        { "id": "SDD-6", "title": "Booking schema", "artifacts": ["schema-booking"] }
+      ]
+    },
+    {
+      "id": "ADR-0001",
+      "kind": "ADR",
+      "title": "ADR-0001 Reminder delivery through an outbox",
+      "summary": "Why reminders are published through a transactional outbox and an event bus instead of direct calls.",
+      "sections": [
+        { "id": "ADR-0001-1", "title": "Decision", "artifacts": ["adr-reminder-delivery"] }
+      ]
+    }
+  ],
+  "artifacts": [
+    { "id": "biz-data-flow", "type": "dataflow", "source": "sources/biz-data-flow.dataflow.json", "output": "biz-data-flow.html" },
+    { "id": "biz-process", "type": "workflow", "source": "sources/biz-process.workflow.json", "output": "biz-process.html" },
+    { "id": "c4-context", "type": "architecture", "source": "sources/c4-context.architecture.json", "output": "c4-context.html" },
+    { "id": "dfd-booking", "type": "dataflow", "source": "sources/dfd-booking.dataflow.json", "output": "dfd-booking.html" },
+    { "id": "activity-booking", "type": "workflow", "source": "sources/activity-booking.workflow.json", "output": "activity-booking.html" },
+    { "id": "c4-containers", "type": "architecture", "source": "sources/c4-containers.architecture.json", "output": "c4-containers.html" },
+    { "id": "schema-booking", "type": "erd", "source": "sources/schema-booking.erd.json", "output": "schema-booking.html" },
+    { "id": "seq-confirm", "type": "sequence", "source": "sources/seq-confirm.sequence.json", "output": "seq-confirm.html" },
+    { "id": "c4-booking-api", "type": "architecture", "source": "sources/c4-booking-api.architecture.json", "output": "c4-booking-api.html" },
+    { "id": "code-booking", "type": "class", "source": "sources/code-booking.class.json", "output": "code-booking.html" },
+    { "id": "appointment-states", "type": "lifecycle", "source": "sources/appointment-states.lifecycle.json", "output": "appointment-states.html" },
+    { "id": "deployment", "type": "architecture", "source": "sources/deployment.architecture.json", "output": "deployment.html" },
+    { "id": "modules", "type": "tree", "source": "sources/modules.tree.json", "output": "modules.html" },
+    {
+      "id": "adr-reminder-delivery",
+      "type": "explainer",
+      "source": "sources/adr-reminder-delivery.archify.md",
+      "output": "adr-reminder-delivery.html",
+      "viewpoint": { "concern": "cross-cutting", "roles": ["architect"], "status": "current" }
+    }
+  ],
+  "elements": [
+    { "id": "C-10", "label": "Patient Web App", "owner": "Web team", "status": "current" },
+    { "id": "C-11", "label": "Front-desk Console", "owner": "Web team", "status": "current" },
+    { "id": "C-20", "label": "Booking API", "owner": "Booking team", "status": "current" },
+    { "id": "C-21", "label": "Reminder Worker", "owner": "Booking team", "status": "current" },
+    { "id": "C-30", "label": "Event Bus", "owner": "Platform team", "status": "current" },
+    { "id": "C-40", "label": "Booking DB", "owner": "Booking team", "status": "current" },
+    { "id": "C-41", "label": "Slot Cache", "owner": "Booking team", "status": "partial" },
+    { "id": "CP-22", "label": "Booking Service", "owner": "Booking team", "status": "current" },
+    { "id": "CP-23", "label": "Availability Service", "owner": "Booking team", "status": "current" },
+    { "id": "CP-24", "label": "Payment Adapter", "owner": "Booking team", "status": "current" },
+    { "id": "CP-26", "label": "Outbox Publisher", "owner": "Booking team", "status": "current" },
+    { "id": "D-10", "label": "Appointment", "owner": "Booking team", "status": "current" },
+    { "id": "D-11", "label": "Slot", "owner": "Booking team", "status": "current" },
+    { "id": "D-12", "label": "Payment", "owner": "Booking team", "status": "current" },
+    { "id": "OP-10", "label": "Book a visit", "owner": "Clinic operations", "status": "current" },
+    { "id": "OP-20", "label": "Pay deposit", "owner": "Clinic operations", "status": "current" },
+    { "id": "OP-30", "label": "Send reminders", "owner": "Clinic operations", "status": "current" },
+    { "id": "OP-40", "label": "Reschedule or cancel", "owner": "Clinic operations", "status": "current" }
+  ]
+}
