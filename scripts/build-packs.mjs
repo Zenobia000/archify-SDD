@@ -9,6 +9,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { sameLocation } from '../archify/renderers/shared/path-semantics.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const packsRoot = path.join(repoRoot, 'docs', 'packs');
@@ -27,9 +28,13 @@ for (const sourcePack of packs) {
   const outDir = path.join(packDir, 'artifacts');
   // Explainers record their source relative to the output, so a render
   // elsewhere mirrors the pack beside its artifacts to keep bytes identical.
-  if (path.resolve(packDir) !== path.dirname(sourcePack)) {
+  const sourceDir = path.dirname(sourcePack);
+  if (sameLocation(packDir, sourceDir).status !== 'match') {
     fs.rmSync(packDir, { recursive: true, force: true });
-    fs.cpSync(path.dirname(sourcePack), packDir, { recursive: true, filter: (file) => !file.startsWith(path.join(path.dirname(sourcePack), 'artifacts')) });
+    fs.mkdirSync(packDir, { recursive: true });
+    for (const entry of fs.readdirSync(sourceDir)) {
+      if (entry !== 'artifacts') fs.cpSync(path.join(sourceDir, entry), path.join(packDir, entry), { recursive: true });
+    }
   }
   const packPath = path.join(packDir, `${id}.pack.json`);
   fs.rmSync(outDir, { recursive: true, force: true });
