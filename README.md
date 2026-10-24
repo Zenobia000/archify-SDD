@@ -8,7 +8,7 @@
 </p>
 <h3 align="center">Turn anything you want to understand, plan, or share into an interactive visual.</h3>
 
-<p align="center"><img src="docs/assets/archify-readme-hero.png" alt="Archify — interactive diagrams" width="960" /></p>
+<p align="center"><img src="docs/assets/archify-readme-hero.png" alt="Archify-SDD: a 3×3 viewpoint matrix of LeaveFlow diagrams, from business to implementation across data, behavior and structure" width="960" /></p>
 
 <p align="center"><strong>Official channels：</strong> <a href="https://archify.si">archify.si</a> · <a href="https://github.com/tt-a1i/archify">GitHub</a><br/>Archify is free and open source. Third-party online services and paid plans are operated by their respective providers and do not represent Archify. <a href="#official-services">Service details →</a></p>
 

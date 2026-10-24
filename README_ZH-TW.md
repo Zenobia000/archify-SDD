@@ -6,6 +6,9 @@
 </p>
 <h3 align="center">Archify-SDD：從業務邏輯，到工程團隊能開工的那一整套圖。</h3>
 
+<p align="center"><img src="docs/assets/archify-readme-hero.png" alt="Archify-SDD：LeaveFlow 請假簽核的 3×3 視角矩陣，由業務到實作，橫跨資料、行為與結構" width="960" /></p>
+<p align="center"><sub>圖中九張都是 LeaveFlow 參考文件包的實際輸出，不是示意圖。</sub></p>
+
 <p align="center">
   <a href="./README.md"><strong>English</strong></a> &nbsp;·&nbsp;
   <a href="./README_ZH.md"><strong>简体中文</strong></a> &nbsp;·&nbsp;
