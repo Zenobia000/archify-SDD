@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "pack_type": "document-pack",
+  "id": "leave-approval",
+  "title": "LeaveFlow 請假簽核系統設計文件",
+  "subtitle": "虛構的企業人資請假簽核系統：從業務流程、動態簽核關卡一路細化到資料表與程式結構。",
+  "locale": "zh-TW",
+  "documents": [
+    {
+      "id": "BRD",
+      "kind": "BRD",
+      "title": "業務需求文件",
+      "summary": "為什麼需要 LeaveFlow：員工、代理人、主管與人資之間如何完成請假，以及彼此交換哪些資訊。",
+      "sections": [
+        { "id": "BRD-3", "title": "請假業務資訊流", "artifacts": ["biz-data-flow"] },
+        { "id": "BRD-4", "title": "請假簽核業務流程", "artifacts": ["biz-process"] }
+      ]
+    },
+    {
+      "id": "SRS",
+      "kind": "SRS",
+      "title": "軟體需求規格",
+      "summary": "系統必須做什麼：送出與簽核的分支流程、每個處理轉換的資料，以及假單狀態。",
+      "sections": [
+        { "id": "SRS-4", "title": "送出與簽核假單", "artifacts": ["activity-submit"] },
+        { "id": "SRS-5", "title": "請假資料流（DFD 第一層）", "artifacts": ["dfd-leave"] },
+        { "id": "SRS-6", "title": "假單狀態", "artifacts": ["leave-states"] }
+      ]
+    },
+    {
+      "id": "SAD",
+      "kind": "SAD",
+      "title": "軟體架構文件",
+      "summary": "LeaveFlow 如何構成：系統脈絡、內部容器，以及部署位置。",
+      "sections": [
+        { "id": "SAD-2", "title": "系統脈絡", "artifacts": ["c4-context"] },
+        { "id": "SAD-4", "title": "容器", "artifacts": ["c4-containers"] },
+        { "id": "SAD-7", "title": "部署", "artifacts": ["deployment"] }
+      ]
+    },
+    {
+      "id": "SDD",
+      "kind": "SDD",
+      "title": "軟體設計文件",
+      "summary": "請假服務如何實作：模組、元件、簽核互動、領域型別與資料表。",
+      "sections": [
+        { "id": "SDD-3", "title": "模組分解", "artifacts": ["modules"] },
+        { "id": "SDD-4", "title": "請假服務元件與領域模型", "artifacts": ["c4-leave-api", "code-approval"] },
+        { "id": "SDD-5", "title": "主管核准互動", "artifacts": ["seq-approve"] },
+        { "id": "SDD-6", "title": "請假資料表", "artifacts": ["schema-leave"] }
+      ]
+    },
+    {
+      "id": "ADR-0001",
+      "kind": "ADR",
+      "title": "ADR-0001 簽核內建於請假服務",
+      "summary": "為什麼簽核做成請假專用模組，而不是共用簽核引擎或外部 BPM，以及何時重新評估。",
+      "sections": [
+        { "id": "ADR-0001-1", "title": "決策", "artifacts": ["adr-embedded-approval"] }
+      ]
+    }
+  ],
+  "artifacts": [
+    { "id": "biz-data-flow", "type": "dataflow", "source": "sources/biz-data-flow.dataflow.json", "output": "biz-data-flow.html" },
+    { "id": "biz-process", "type": "workflow", "source": "sources/biz-process.workflow.json", "output": "biz-process.html" },
+    { "id": "c4-context", "type": "architecture", "source": "sources/c4-context.architecture.json", "output": "c4-context.html" },
+    { "id": "dfd-leave", "type": "dataflow", "source": "sources/dfd-leave.dataflow.json", "output": "dfd-leave.html" },
+    { "id": "activity-submit", "type": "workflow", "source": "sources/activity-submit.workflow.json", "output": "activity-submit.html" },
+    { "id": "leave-states", "type": "lifecycle", "source": "sources/leave-states.lifecycle.json", "output": "leave-states.html" },
+    { "id": "c4-containers", "type": "architecture", "source": "sources/c4-containers.architecture.json", "output": "c4-containers.html" },
+    { "id": "deployment", "type": "architecture", "source": "sources/deployment.architecture.json", "output": "deployment.html" },
+    { "id": "c4-leave-api", "type": "architecture", "source": "sources/c4-leave-api.architecture.json", "output": "c4-leave-api.html" },
+    { "id": "code-approval", "type": "class", "source": "sources/code-approval.class.json", "output": "code-approval.html" },
+    { "id": "modules", "type": "tree", "source": "sources/modules.tree.json", "output": "modules.html" },
+    { "id": "seq-approve", "type": "sequence", "source": "sources/seq-approve.sequence.json", "output": "seq-approve.html" },
+    { "id": "schema-leave", "type": "erd", "source": "sources/schema-leave.erd.json", "output": "schema-leave.html" },
+    {
+      "id": "adr-embedded-approval",
+      "type": "explainer",
+      "source": "sources/adr-embedded-approval.archify.md",
+      "output": "adr-embedded-approval.html",
+      "viewpoint": { "concern": "cross-cutting", "roles": ["architect"], "status": "current" }
+    }
+  ],
+  "elements": [
+    { "id": "C-10", "label": "員工入口", "owner": "前端團隊", "status": "current" },
+    { "id": "C-11", "label": "人資後台", "owner": "前端團隊", "status": "current" },
+    { "id": "C-20", "label": "請假服務（含簽核）", "owner": "請假團隊", "status": "current" },
+    { "id": "C-21", "label": "排程工作者", "owner": "請假團隊", "status": "current" },
+    { "id": "C-22", "label": "整合工作者", "owner": "整合團隊", "status": "partial" },
+    { "id": "C-30", "label": "訊息佇列", "owner": "平台團隊", "status": "current" },
+    { "id": "C-40", "label": "請假資料庫", "owner": "請假團隊", "status": "current" },
+    { "id": "CP-22", "label": "假單服務", "owner": "請假團隊", "status": "current" },
+    { "id": "CP-23", "label": "額度服務", "owner": "請假團隊", "status": "current" },
+    { "id": "CP-24", "label": "簽核路由引擎", "owner": "請假團隊", "status": "current" },
+    { "id": "CP-25", "label": "簽核服務", "owner": "請假團隊", "status": "current" },
+    { "id": "CP-26", "label": "代理解析", "owner": "請假團隊", "status": "current" },
+    { "id": "CP-28", "label": "事件發佈", "owner": "請假團隊", "status": "current" },
+    { "id": "D-10", "label": "假單", "owner": "請假團隊", "status": "current" },
+    { "id": "D-11", "label": "假別額度", "owner": "人資", "status": "current" },
+    { "id": "D-12", "label": "簽核關卡", "owner": "請假團隊", "status": "current" },
+    { "id": "D-13", "label": "代理設定", "owner": "請假團隊", "status": "current" },
+    { "id": "OP-10", "label": "申請請假", "owner": "人資作業", "status": "current" },
+    { "id": "OP-20", "label": "逐關簽核", "owner": "人資作業", "status": "current" },
+    { "id": "OP-30", "label": "逾時提醒與升級", "owner": "人資作業", "status": "current" },
+    { "id": "OP-40", "label": "撤回與銷假", "owner": "人資作業", "status": "current" },
+    { "id": "OP-50", "label": "同步出勤與薪資", "owner": "人資作業", "status": "partial" }
+  ]
+}

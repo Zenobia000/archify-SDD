@@ -1,0 +1,1107 @@
+{
+  "schema_version": 1,
+  "pack_type": "document-pack",
+  "id": "leave-approval",
+  "title": "LeaveFlow 請假簽核系統設計文件",
+  "subtitle": "虛構的企業人資請假簽核系統：從業務流程、動態簽核關卡一路細化到資料表與程式結構。",
+  "locale": "zh-TW",
+  "documents": [
+    {
+      "id": "BRD",
+      "kind": "BRD",
+      "title": "業務需求文件",
+      "summary": "為什麼需要 LeaveFlow：員工、代理人、主管與人資之間如何完成請假，以及彼此交換哪些資訊。",
+      "sections": [
+        {
+          "id": "BRD-3",
+          "title": "請假業務資訊流",
+          "artifacts": [
+            "biz-data-flow"
+          ]
+        },
+        {
+          "id": "BRD-4",
+          "title": "請假簽核業務流程",
+          "artifacts": [
+            "biz-process"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SRS",
+      "kind": "SRS",
+      "title": "軟體需求規格",
+      "summary": "系統必須做什麼：送出與簽核的分支流程、每個處理轉換的資料，以及假單狀態。",
+      "sections": [
+        {
+          "id": "SRS-4",
+          "title": "送出與簽核假單",
+          "artifacts": [
+            "activity-submit"
+          ]
+        },
+        {
+          "id": "SRS-5",
+          "title": "請假資料流（DFD 第一層）",
+          "artifacts": [
+            "dfd-leave"
+          ]
+        },
+        {
+          "id": "SRS-6",
+          "title": "假單狀態",
+          "artifacts": [
+            "leave-states"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SAD",
+      "kind": "SAD",
+      "title": "軟體架構文件",
+      "summary": "LeaveFlow 如何構成：系統脈絡、內部容器，以及部署位置。",
+      "sections": [
+        {
+          "id": "SAD-2",
+          "title": "系統脈絡",
+          "artifacts": [
+            "c4-context"
+          ]
+        },
+        {
+          "id": "SAD-4",
+          "title": "容器",
+          "artifacts": [
+            "c4-containers"
+          ]
+        },
+        {
+          "id": "SAD-7",
+          "title": "部署",
+          "artifacts": [
+            "deployment"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SDD",
+      "kind": "SDD",
+      "title": "軟體設計文件",
+      "summary": "請假服務如何實作：模組、元件、簽核互動、領域型別與資料表。",
+      "sections": [
+        {
+          "id": "SDD-3",
+          "title": "模組分解",
+          "artifacts": [
+            "modules"
+          ]
+        },
+        {
+          "id": "SDD-4",
+          "title": "請假服務元件與領域模型",
+          "artifacts": [
+            "c4-leave-api",
+            "code-approval"
+          ]
+        },
+        {
+          "id": "SDD-5",
+          "title": "主管核准互動",
+          "artifacts": [
+            "seq-approve"
+          ]
+        },
+        {
+          "id": "SDD-6",
+          "title": "請假資料表",
+          "artifacts": [
+            "schema-leave"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ADR-0001",
+      "kind": "ADR",
+      "title": "ADR-0001 簽核內建於請假服務",
+      "summary": "為什麼簽核做成請假專用模組，而不是共用簽核引擎或外部 BPM，以及何時重新評估。",
+      "sections": [
+        {
+          "id": "ADR-0001-1",
+          "title": "決策",
+          "artifacts": [
+            "adr-embedded-approval"
+          ]
+        }
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "biz-data-flow",
+      "type": "dataflow",
+      "title": "LeaveFlow 請假業務資訊流",
+      "source": "sources/biz-data-flow.dataflow.json",
+      "output": "biz-data-flow.html",
+      "viewpoint": {
+        "level": "business",
+        "concern": "data",
+        "roles": [
+          "business-analyst",
+          "system-analyst"
+        ],
+        "status": "current"
+      },
+      "documents": [
+        {
+          "document": "BRD",
+          "section": "BRD-3",
+          "title": "請假業務資訊流"
+        }
+      ],
+      "refines": [],
+      "refinedBy": [
+        "dfd-leave"
+      ],
+      "drillsInto": [
+        {
+          "node": "apply-leave",
+          "target": "dfd-leave.html",
+          "focus": "reserve-balance",
+          "label": "DFD 第一層"
+        }
+      ],
+      "drilledFrom": [],
+      "elements": {
+        "apply-leave": "OP-10",
+        "approve-leave": "OP-20",
+        "sync-payroll": "OP-50"
+      },
+      "sha256": "fc404cce950bbeeba6f1d4ba916c8151891ce1af3e7eea20ef4e24e711439b4e",
+      "bytes": 840486,
+      "check": true
+    },
+    {
+      "id": "biz-process",
+      "type": "workflow",
+      "title": "LeaveFlow 請假簽核業務流程",
+      "source": "sources/biz-process.workflow.json",
+      "output": "biz-process.html",
+      "viewpoint": {
+        "level": "business",
+        "concern": "behavior",
+        "roles": [
+          "business-analyst",
+          "system-analyst"
+        ],
+        "status": "current"
+      },
+      "documents": [
+        {
+          "document": "BRD",
+          "section": "BRD-4",
+          "title": "請假簽核業務流程"
+        }
+      ],
+      "refines": [],
+      "refinedBy": [
+        "activity-submit"
+      ],
+      "drillsInto": [
+        {
+          "node": "fill-request",
+          "target": "activity-submit.html",
+          "label": "活動圖：送出與簽核"
+        }
+      ],
+      "drilledFrom": [],
+      "elements": {
+        "fill-request": "OP-10",
+        "supervisor-approve": "OP-20",
+        "escalate": "OP-30",
+        "withdraw": "OP-40"
+      },
+      "sha256": "6ab37dd80a725e48966fec87822c6ce22dd004ee32d6bf5162ca1a23b949e8eb",
+      "bytes": 844318,
+      "check": true
+    },
+    {
+      "id": "c4-context",
+      "type": "architecture",
+      "title": "LeaveFlow 系統脈絡（C4 L1）",
+      "source": "sources/c4-context.architecture.json",
+      "output": "c4-context.html",
+      "viewpoint": {
+        "level": "business",
+        "concern": "structure",
+        "c4_level": "context",
+        "roles": [
+          "architect",
+          "system-analyst"
+        ],
+        "status": "current"
+      },
+      "documents": [
+        {
+          "document": "SAD",
+          "section": "SAD-2",
+          "title": "系統脈絡"
+        }
+      ],
+      "refines": [],
+      "refinedBy": [
+        "c4-containers"
+      ],
+      "drillsInto": [
+        {
+          "node": "leaveflow",
+          "target": "c4-containers.html",
+          "focus": "leave-api",
+          "label": "容器（C4 L2）"
+        }
+      ],
+      "drilledFrom": [],
+      "elements": {},
+      "sha256": "17e1f5f521c42fc470d39cf8a4ce7dcaf8b79b557c8140243f61a1df8266b418",
+      "bytes": 843424,
+      "check": true
+    },
+    {
+      "id": "dfd-leave",
+      "type": "dataflow",
+      "title": "LeaveFlow 請假資料流（DFD 第一層）",
+      "source": "sources/dfd-leave.dataflow.json",
+      "output": "dfd-leave.html",
+      "viewpoint": {
+        "level": "system",
+        "concern": "data",
+        "roles": [
+          "system-analyst"
+        ],
+        "status": "current"
+      },
+      "documents": [
+        {
+          "document": "SRS",
+          "section": "SRS-5",
+          "title": "請假資料流（DFD 第一層）"
+        }
+      ],
+      "refines": [
+        "biz-data-flow"
+      ],
+      "refinedBy": [
+        "schema-leave"
+      ],
+      "drillsInto": [
+        {
+          "node": "requests-store",
+          "target": "schema-leave.html",
+          "focus": "leave_requests",
+          "label": "請假資料表"
+        }
+      ],
+      "drilledFrom": [
+        "biz-data-flow"
+      ],
+      "elements": {
+        "reserve-balance": "OP-10",
+        "record-approval": "OP-20",
+        "sync-changes": "OP-50",
+        "requests-store": "D-10",
+        "balances-store": "D-11",
+        "steps-store": "D-12",
+        "delegations-store": "D-13"
+      },
+      "sha256": "b5315985f14982e66a27c851840338f472ed490ac33fd3da502de2459eabe8b2",
+      "bytes": 845706,
+      "check": true
+    },
+    {
+      "id": "activity-submit",
+      "type": "workflow",
+      "title": "LeaveFlow 活動圖：送出與簽核假單",
+      "source": "sources/activity-submit.workflow.json",
+      "output": "activity-submit.html",
+      "viewpoint": {
+        "level": "system",
+        "concern": "behavior",
+        "roles": [
+          "system-analyst",
+          "software-designer"
+        ],
+        "status": "current"
+      },
+      "documents": [
+        {
+          "document": "SRS",
+          "section": "SRS-4",
+          "title": "送出與簽核假單"
+        }
+      ],
+      "refines": [
+        "biz-process"
+      ],
+      "refinedBy": [
+        "leave-states",
+        "seq-approve"
+      ],
+      "drillsInto": [
+        {
+          "node": "approve-step",
+          "target": "seq-approve.html",
+          "label": "時序圖：主管核准"
+        }
+      ],
+      "drilledFrom": [
+        "biz-process"
+      ],
+      "elements": {
+        "submit": "OP-10",
+        "approve-step": "OP-20",
+        "return-for-fix": "OP-40"
+      },
+      "sha256": "cbe43179238d8a3065c8df767038ecc3b89d3b131f33d0007850a34c986fd9ce",
+      "bytes": 857777,
+      "check": true
+    },
+    {
+      "id": "leave-states",
+      "type": "lifecycle",
+      "title": "LeaveFlow 假單狀態機",
+      "source": "sources/leave-states.lifecycle.json",
+      "output": "leave-states.html",
+      "viewpoint": {
+        "level": "system",
+        "concern": "behavior",
+        "roles": [
+          "system-analyst",
+          "software-designer"
+        ],
+        "status": "current"
+      },
+      "documents": [
+        {
+          "document": "SRS",
+          "section": "SRS-6",
+          "title": "假單狀態"
+        }
+      ],
+      "refines": [
+        "activity-submit"
+      ],
+      "refinedBy": [],
+      "drillsInto": [],
+      "drilledFrom": [],
+      "elements": {},
+      "sha256": "c5759e42978e81667ea072a56864d145545dde4c93b4f2fd2fb1b51838a59fa7",
+      "bytes": 840435,
+      "check": true
+    },
+    {
+      "id": "c4-containers",
+      "type": "architecture",
+      "title": "LeaveFlow 容器（C4 L2）",
+      "source": "sources/c4-containers.architecture.json",
+      "output": "c4-containers.html",
+      "viewpoint": {
+        "level": "system",
+        "concern": "structure",
+        "c4_level": "container",
+        "roles": [
+          "architect"
+        ],
+        "status": "current"
+      },
+      "documents": [
+        {
+          "document": "SAD",
+          "section": "SAD-4",
+          "title": "容器"
+        }
+      ],
+      "refines": [
+        "c4-context"
+      ],
+      "refinedBy": [
+        "deployment",
+        "c4-leave-api"
+      ],
+      "drillsInto": [
+        {
+          "node": "leave-api",
+          "target": "c4-leave-api.html",
+          "focus": "approval-service",
+          "label": "元件（C4 L3）"
+        },
+        {
+          "node": "leave-db",
+          "target": "schema-leave.html",
+          "focus": "leave_requests",
+          "label": "請假資料表"
+        }
+      ],
+      "drilledFrom": [
+        "c4-context"
+      ],
+      "elements": {
+        "employee-portal": "C-10",
+        "hr-console": "C-11",
+        "leave-api": "C-20",
+        "scheduler": "C-21",
+        "integration-worker": "C-22",
+        "message-queue": "C-30",
+        "leave-db": "C-40"
+      },
+      "sha256": "3054254604568c3654770c2a786f06f88f96ed2967d4a72fe21d0a0128a4fab5",
+      "bytes": 859374,
+      "check": true
+    },
+    {
+      "id": "deployment",
+      "type": "architecture",
+      "title": "LeaveFlow 部署（目標）",
+      "source": "sources/deployment.architecture.json",
+      "output": "deployment.html",
+      "viewpoint": {
+        "level": "system",
+        "concern": "structure",
+        "c4_level": "deployment",
+        "roles": [
+          "architect",
+          "operator"
+        ],
+        "status": "target"
+      },
+      "documents": [
+        {
+          "document": "SAD",
+          "section": "SAD-7",
+          "title": "部署"
+        }
+      ],
+      "refines": [
+        "c4-containers"
+      ],
+      "refinedBy": [],
+      "drillsInto": [],
+      "drilledFrom": [],
+      "elements": {
+        "leave-api": "C-20",
+        "scheduler": "C-21",
+        "integration-worker": "C-22",
+        "message-queue": "C-30",
+        "leave-db": "C-40"
+      },
+      "sha256": "a0d665ceb0aa3af6cc80f285eaddc8652c543c77a6bb020ff01f1ec346c4aaf0",
+      "bytes": 858731,
+      "check": true
+    },
+    {
+      "id": "c4-leave-api",
+      "type": "architecture",
+      "title": "請假服務元件（C4 L3）",
+      "source": "sources/c4-leave-api.architecture.json",
+      "output": "c4-leave-api.html",
+      "viewpoint": {
+        "level": "implementation",
+        "concern": "structure",
+        "c4_level": "component",
+        "roles": [
+          "architect",
+          "software-designer"
+        ],
+        "status": "current"
+      },
+      "documents": [
+        {
+          "document": "SDD",
+          "section": "SDD-4",
+          "title": "請假服務元件與領域模型"
+        }
+      ],
+      "refines": [
+        "c4-containers"
+      ],
+      "refinedBy": [
+        "code-approval",
+        "modules"
+      ],
+      "drillsInto": [
+        {
+          "node": "approval-service",
+          "target": "code-approval.html",
+          "focus": "approval-step",
+          "label": "領域模型（C4 L4）"
+        },
+        {
+          "node": "routing-engine",
+          "target": "seq-approve.html",
+          "label": "時序圖：主管核准"
+        }
+      ],
+      "drilledFrom": [
+        "c4-containers"
+      ],
+      "elements": {
+        "leave-service": "CP-22",
+        "balance-service": "CP-23",
+        "routing-engine": "CP-24",
+        "approval-service": "CP-25",
+        "delegation-resolver": "CP-26",
+        "outbox-publisher": "CP-28"
+      },
+      "sha256": "75c0b967408788ca660eeb5266d7d228b2497888a2f66aff7f2c21921458afb7",
+      "bytes": 856059,
+      "check": true
+    },
+    {
+      "id": "code-approval",
+      "type": "class",
+      "title": "簽核領域模型",
+      "source": "sources/code-approval.class.json",
+      "output": "code-approval.html",
+      "viewpoint": {
+        "level": "implementation",
+        "concern": "structure",
+        "c4_level": "code",
+        "roles": [
+          "software-designer",
+          "developer"
+        ],
+        "status": "current"
+      },
+      "documents": [
+        {
+          "document": "SDD",
+          "section": "SDD-4",
+          "title": "請假服務元件與領域模型"
+        }
+      ],
+      "refines": [
+        "c4-leave-api"
+      ],
+      "refinedBy": [],
+      "drillsInto": [],
+      "drilledFrom": [
+        "c4-leave-api"
+      ],
+      "elements": {
+        "leave-request": "D-10",
+        "leave-balance": "D-11",
+        "approval-step": "D-12",
+        "delegation": "D-13"
+      },
+      "sha256": "de685b538cc474530715bcc2312167c0f19887f6a4e455cae69b0400ce786336",
+      "bytes": 886569,
+      "check": true
+    },
+    {
+      "id": "modules",
+      "type": "tree",
+      "title": "請假服務模組分解",
+      "source": "sources/modules.tree.json",
+      "output": "modules.html",
+      "viewpoint": {
+        "level": "implementation",
+        "concern": "structure",
+        "roles": [
+          "software-designer"
+        ],
+        "status": "current"
+      },
+      "documents": [
+        {
+          "document": "SDD",
+          "section": "SDD-3",
+          "title": "模組分解"
+        }
+      ],
+      "refines": [
+        "c4-leave-api"
+      ],
+      "refinedBy": [],
+      "drillsInto": [],
+      "drilledFrom": [],
+      "elements": {},
+      "sha256": "013d79dbfd71227aa8d05e3fbb6346e4abe6c030358109ed4a44a4a891668b40",
+      "bytes": 868249,
+      "check": true
+    },
+    {
+      "id": "seq-approve",
+      "type": "sequence",
+      "title": "主管核准假單",
+      "source": "sources/seq-approve.sequence.json",
+      "output": "seq-approve.html",
+      "viewpoint": {
+        "level": "implementation",
+        "concern": "behavior",
+        "roles": [
+          "software-designer",
+          "developer"
+        ],
+        "status": "current"
+      },
+      "documents": [
+        {
+          "document": "SDD",
+          "section": "SDD-5",
+          "title": "主管核准互動"
+        }
+      ],
+      "refines": [
+        "activity-submit"
+      ],
+      "refinedBy": [],
+      "drillsInto": [],
+      "drilledFrom": [
+        "activity-submit",
+        "c4-leave-api"
+      ],
+      "elements": {
+        "approval-service": "CP-25",
+        "routing-engine": "CP-24",
+        "outbox-publisher": "CP-28"
+      },
+      "sha256": "e943b8f65778897aaa4f2e4a007debdb784e008e7f2a53b9d82b5e20c447ce78",
+      "bytes": 848655,
+      "check": true
+    },
+    {
+      "id": "schema-leave",
+      "type": "erd",
+      "title": "請假資料表結構",
+      "source": "sources/schema-leave.erd.json",
+      "output": "schema-leave.html",
+      "viewpoint": {
+        "level": "implementation",
+        "concern": "data",
+        "roles": [
+          "software-designer",
+          "developer"
+        ],
+        "status": "current"
+      },
+      "documents": [
+        {
+          "document": "SDD",
+          "section": "SDD-6",
+          "title": "請假資料表"
+        }
+      ],
+      "refines": [
+        "dfd-leave"
+      ],
+      "refinedBy": [],
+      "drillsInto": [],
+      "drilledFrom": [
+        "dfd-leave",
+        "c4-containers"
+      ],
+      "elements": {
+        "leave_requests": "D-10",
+        "leave_balances": "D-11",
+        "approval_steps": "D-12",
+        "delegations": "D-13"
+      },
+      "sha256": "fb0fb631fc693d74f4146c158a22546f4d11ba83d75ec8e9f458571c11dea67f",
+      "bytes": 901515,
+      "check": true
+    },
+    {
+      "id": "adr-embedded-approval",
+      "type": "explainer",
+      "title": "ADR-0001：簽核內建於請假服務",
+      "source": "sources/adr-embedded-approval.archify.md",
+      "output": "adr-embedded-approval.html",
+      "viewpoint": {
+        "concern": "cross-cutting",
+        "roles": [
+          "architect"
+        ],
+        "status": "current"
+      },
+      "documents": [
+        {
+          "document": "ADR-0001",
+          "section": "ADR-0001-1",
+          "title": "決策"
+        }
+      ],
+      "refines": [],
+      "refinedBy": [],
+      "drillsInto": [],
+      "drilledFrom": [],
+      "elements": {},
+      "sha256": "b0b49091cb4bdfd4838ce6546f907ba746b3cce4001d227887aee549addf4e9c",
+      "bytes": 531206,
+      "check": true
+    }
+  ],
+  "elements": [
+    {
+      "id": "C-10",
+      "label": "員工入口",
+      "owner": "前端團隊",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "c4-containers",
+          "node": "employee-portal"
+        }
+      ]
+    },
+    {
+      "id": "C-11",
+      "label": "人資後台",
+      "owner": "前端團隊",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "c4-containers",
+          "node": "hr-console"
+        }
+      ]
+    },
+    {
+      "id": "C-20",
+      "label": "請假服務（含簽核）",
+      "owner": "請假團隊",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "c4-containers",
+          "node": "leave-api"
+        },
+        {
+          "artifact": "deployment",
+          "node": "leave-api"
+        }
+      ]
+    },
+    {
+      "id": "C-21",
+      "label": "排程工作者",
+      "owner": "請假團隊",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "c4-containers",
+          "node": "scheduler"
+        },
+        {
+          "artifact": "deployment",
+          "node": "scheduler"
+        }
+      ]
+    },
+    {
+      "id": "C-22",
+      "label": "整合工作者",
+      "owner": "整合團隊",
+      "status": "partial",
+      "appearsIn": [
+        {
+          "artifact": "c4-containers",
+          "node": "integration-worker"
+        },
+        {
+          "artifact": "deployment",
+          "node": "integration-worker"
+        }
+      ]
+    },
+    {
+      "id": "C-30",
+      "label": "訊息佇列",
+      "owner": "平台團隊",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "c4-containers",
+          "node": "message-queue"
+        },
+        {
+          "artifact": "deployment",
+          "node": "message-queue"
+        }
+      ]
+    },
+    {
+      "id": "C-40",
+      "label": "請假資料庫",
+      "owner": "請假團隊",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "c4-containers",
+          "node": "leave-db"
+        },
+        {
+          "artifact": "deployment",
+          "node": "leave-db"
+        }
+      ]
+    },
+    {
+      "id": "CP-22",
+      "label": "假單服務",
+      "owner": "請假團隊",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "c4-leave-api",
+          "node": "leave-service"
+        }
+      ]
+    },
+    {
+      "id": "CP-23",
+      "label": "額度服務",
+      "owner": "請假團隊",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "c4-leave-api",
+          "node": "balance-service"
+        }
+      ]
+    },
+    {
+      "id": "CP-24",
+      "label": "簽核路由引擎",
+      "owner": "請假團隊",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "c4-leave-api",
+          "node": "routing-engine"
+        },
+        {
+          "artifact": "seq-approve",
+          "node": "routing-engine"
+        }
+      ]
+    },
+    {
+      "id": "CP-25",
+      "label": "簽核服務",
+      "owner": "請假團隊",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "c4-leave-api",
+          "node": "approval-service"
+        },
+        {
+          "artifact": "seq-approve",
+          "node": "approval-service"
+        }
+      ]
+    },
+    {
+      "id": "CP-26",
+      "label": "代理解析",
+      "owner": "請假團隊",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "c4-leave-api",
+          "node": "delegation-resolver"
+        }
+      ]
+    },
+    {
+      "id": "CP-28",
+      "label": "事件發佈",
+      "owner": "請假團隊",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "c4-leave-api",
+          "node": "outbox-publisher"
+        },
+        {
+          "artifact": "seq-approve",
+          "node": "outbox-publisher"
+        }
+      ]
+    },
+    {
+      "id": "D-10",
+      "label": "假單",
+      "owner": "請假團隊",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "dfd-leave",
+          "node": "requests-store"
+        },
+        {
+          "artifact": "code-approval",
+          "node": "leave-request"
+        },
+        {
+          "artifact": "schema-leave",
+          "node": "leave_requests"
+        }
+      ]
+    },
+    {
+      "id": "D-11",
+      "label": "假別額度",
+      "owner": "人資",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "dfd-leave",
+          "node": "balances-store"
+        },
+        {
+          "artifact": "code-approval",
+          "node": "leave-balance"
+        },
+        {
+          "artifact": "schema-leave",
+          "node": "leave_balances"
+        }
+      ]
+    },
+    {
+      "id": "D-12",
+      "label": "簽核關卡",
+      "owner": "請假團隊",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "dfd-leave",
+          "node": "steps-store"
+        },
+        {
+          "artifact": "code-approval",
+          "node": "approval-step"
+        },
+        {
+          "artifact": "schema-leave",
+          "node": "approval_steps"
+        }
+      ]
+    },
+    {
+      "id": "D-13",
+      "label": "代理設定",
+      "owner": "請假團隊",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "dfd-leave",
+          "node": "delegations-store"
+        },
+        {
+          "artifact": "code-approval",
+          "node": "delegation"
+        },
+        {
+          "artifact": "schema-leave",
+          "node": "delegations"
+        }
+      ]
+    },
+    {
+      "id": "OP-10",
+      "label": "申請請假",
+      "owner": "人資作業",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "biz-data-flow",
+          "node": "apply-leave"
+        },
+        {
+          "artifact": "biz-process",
+          "node": "fill-request"
+        },
+        {
+          "artifact": "dfd-leave",
+          "node": "reserve-balance"
+        },
+        {
+          "artifact": "activity-submit",
+          "node": "submit"
+        }
+      ]
+    },
+    {
+      "id": "OP-20",
+      "label": "逐關簽核",
+      "owner": "人資作業",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "biz-data-flow",
+          "node": "approve-leave"
+        },
+        {
+          "artifact": "biz-process",
+          "node": "supervisor-approve"
+        },
+        {
+          "artifact": "dfd-leave",
+          "node": "record-approval"
+        },
+        {
+          "artifact": "activity-submit",
+          "node": "approve-step"
+        }
+      ]
+    },
+    {
+      "id": "OP-30",
+      "label": "逾時提醒與升級",
+      "owner": "人資作業",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "biz-process",
+          "node": "escalate"
+        }
+      ]
+    },
+    {
+      "id": "OP-40",
+      "label": "撤回與銷假",
+      "owner": "人資作業",
+      "status": "current",
+      "appearsIn": [
+        {
+          "artifact": "biz-process",
+          "node": "withdraw"
+        },
+        {
+          "artifact": "activity-submit",
+          "node": "return-for-fix"
+        }
+      ]
+    },
+    {
+      "id": "OP-50",
+      "label": "同步出勤與薪資",
+      "owner": "人資作業",
+      "status": "partial",
+      "appearsIn": [
+        {
+          "artifact": "biz-data-flow",
+          "node": "sync-payroll"
+        },
+        {
+          "artifact": "dfd-leave",
+          "node": "sync-changes"
+        }
+      ]
+    }
+  ]
+}

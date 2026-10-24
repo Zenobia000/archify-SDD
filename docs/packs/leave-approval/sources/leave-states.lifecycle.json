@@ -1,0 +1,66 @@
+{
+  "schema_version": 3,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "LeaveFlow 假單狀態機",
+    "output": "leave-states.html",
+    "locale": "zh-TW",
+    "visual_preset": "reference",
+    "quality_profile": "showcase",
+    "viewpoint": { "level": "system", "concern": "behavior", "roles": ["system-analyst", "software-designer"], "status": "current" },
+    "trace": { "id": "leave-states", "refines": ["activity-submit"] }
+  },
+  "mainPath": ["draft", "pending_deputy", "in_review", "approved"],
+  "states": [
+    { "id": "draft", "type": "start", "label": "草稿", "sublabel": "尚未送出", "tag": "draft", "step": "01" },
+    { "id": "pending_deputy", "type": "waiting", "label": "待代理確認", "sublabel": "已預扣額度", "tag": "pending_deputy", "step": "02" },
+    { "id": "in_review", "type": "decision", "label": "簽核中", "sublabel": "逐關簽核", "tag": "in_review", "step": "03" },
+    { "id": "approved", "type": "success", "label": "已核准", "sublabel": "已實扣額度", "tag": "approved", "step": "04" },
+    { "id": "returned", "type": "waiting", "label": "退回補件", "sublabel": "等待申請人補件", "tag": "returned" },
+    { "id": "rejected", "type": "failure", "label": "已駁回", "sublabel": "額度已回補", "tag": "rejected" },
+    { "id": "withdrawn", "type": "neutral", "label": "已撤回", "sublabel": "額度已回補", "tag": "withdrawn" },
+    { "id": "cancel_requested", "type": "waiting", "label": "銷假申請中", "sublabel": "直屬主管簡化簽核", "tag": "cancel_requested" },
+    { "id": "cancelled", "type": "neutral", "label": "已銷假", "sublabel": "額度已回補", "tag": "cancelled" }
+  ],
+  "transitions": [
+    { "id": "draft-submit", "from": "draft", "to": "pending_deputy", "label": "送出 [額度足夠]", "note": "預扣額度", "variant": "emphasis" },
+    { "id": "deputy-accept", "from": "pending_deputy", "to": "in_review", "label": "代理人同意", "note": "產生簽核關卡", "variant": "emphasis" },
+    { "id": "all-approved", "from": "in_review", "to": "approved", "label": "[全部關卡核准]", "note": "實扣額度並同步", "variant": "emphasis" },
+    { "id": "deputy-decline", "from": "pending_deputy", "to": "draft", "label": "代理人拒絕", "note": "退回申請人修改" },
+    { "id": "return-for-fix", "from": "in_review", "to": "returned", "label": "退回補件" },
+    { "id": "resubmit", "from": "returned", "to": "in_review", "label": "重送", "note": "從被退回的關卡重簽" },
+    { "id": "any-reject", "from": "in_review", "to": "rejected", "label": "任一駁回", "note": "回補額度", "variant": "security" },
+    { "id": "withdraw-pending", "from": "pending_deputy", "to": "withdrawn", "label": "撤回", "note": "回補額度" },
+    { "id": "withdraw-review", "from": "in_review", "to": "withdrawn", "label": "撤回 [簽核完成前]", "note": "回補額度" },
+    { "id": "request-cancel", "from": "approved", "to": "cancel_requested", "label": "銷假 [請假開始前]" },
+    { "id": "cancel-approved", "from": "cancel_requested", "to": "cancelled", "label": "直屬主管核准", "note": "回補額度" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "主要路徑",
+      "items": [
+        "送出時預扣額度，先由代理人確認",
+        "依假別與天數產生關卡，全部核准才進入已核准",
+        "逾時提醒、升級與加簽都在簽核中狀態內進行"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "退回與重送",
+      "items": [
+        "簽核人可退回補件，重送時從被退回的關卡重簽",
+        "已簽紀錄保留，不需從第一關重來",
+        "代理人拒絕時假單回到草稿，由申請人修改"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "額度回補",
+      "items": [
+        "已駁回、已撤回、已銷假都回補預扣或實扣的額度",
+        "核准後只能在請假開始前申請銷假"
+      ]
+    }
+  ]
+}

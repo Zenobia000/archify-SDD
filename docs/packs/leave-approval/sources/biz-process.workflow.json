@@ -1,0 +1,334 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "LeaveFlow 請假簽核業務流程",
+    "output": "biz-process.html",
+    "locale": "zh-TW",
+    "visual_preset": "reference",
+    "quality_profile": "showcase",
+    "viewpoint": {
+      "level": "business",
+      "concern": "behavior",
+      "roles": [
+        "business-analyst",
+        "system-analyst"
+      ],
+      "status": "current"
+    },
+    "trace": {
+      "id": "biz-process",
+      "drills_into": [
+        {
+          "node": "fill-request",
+          "target": "activity-submit.html",
+          "label": "活動圖：送出與簽核"
+        }
+      ],
+      "elements": {
+        "fill-request": "OP-10",
+        "supervisor-approve": "OP-20",
+        "escalate": "OP-30",
+        "withdraw": "OP-40"
+      }
+    },
+    "legend": {
+      "entries": {
+        "frontend": {
+          "label": "員工步驟"
+        },
+        "external": {
+          "label": "代理人與簽核人步驟"
+        },
+        "backend": {
+          "label": "LeaveFlow 自動步驟"
+        },
+        "security": {
+          "label": "結案結果"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "employee-lane",
+      "label": "員工"
+    },
+    {
+      "id": "deputy-lane",
+      "label": "代理人"
+    },
+    {
+      "id": "supervisor-lane",
+      "label": "直屬主管"
+    },
+    {
+      "id": "dept-head-lane",
+      "label": "部門主管"
+    },
+    {
+      "id": "hr-lane",
+      "label": "人資"
+    },
+    {
+      "id": "system-lane",
+      "label": "LeaveFlow"
+    }
+  ],
+  "phases": [
+    {
+      "id": "apply-phase",
+      "label": "申請與代理",
+      "fromCol": 0,
+      "toCol": 1,
+      "variant": "emphasis"
+    },
+    {
+      "id": "approve-phase",
+      "label": "逐關簽核",
+      "fromCol": 2,
+      "toCol": 4
+    },
+    {
+      "id": "after-phase",
+      "label": "核准後",
+      "fromCol": 5,
+      "toCol": 5
+    }
+  ],
+  "mainPath": [
+    "fill-request",
+    "deputy-confirm",
+    "supervisor-approve",
+    "dept-head-approve",
+    "hr-review",
+    "notify-approved"
+  ],
+  "nodes": [
+    {
+      "id": "fill-request",
+      "lane": "employee-lane",
+      "col": 0,
+      "type": "frontend",
+      "icon": "calendar",
+      "label": "填寫假單",
+      "sublabel": "假別、時段、代理人",
+      "tag": "OP-10"
+    },
+    {
+      "id": "fix-request",
+      "lane": "employee-lane",
+      "col": 2,
+      "type": "frontend",
+      "label": "補件重送",
+      "sublabel": "從退回關卡續簽"
+    },
+    {
+      "id": "rejected",
+      "lane": "employee-lane",
+      "col": 3,
+      "type": "security",
+      "icon": "failure",
+      "label": "駁回結案",
+      "sublabel": "回補額度"
+    },
+    {
+      "id": "withdraw",
+      "lane": "employee-lane",
+      "col": 4,
+      "type": "frontend",
+      "label": "撤回或銷假",
+      "sublabel": "簽核中撤回、銷假",
+      "tag": "OP-40"
+    },
+    {
+      "id": "deputy-confirm",
+      "lane": "deputy-lane",
+      "col": 1,
+      "type": "external",
+      "icon": "person",
+      "label": "代理人確認",
+      "sublabel": "同意或拒絕"
+    },
+    {
+      "id": "supervisor-approve",
+      "lane": "supervisor-lane",
+      "col": 2,
+      "type": "external",
+      "icon": "person",
+      "label": "直屬主管簽核",
+      "sublabel": "每張假單必經",
+      "tag": "OP-20"
+    },
+    {
+      "id": "dept-head-approve",
+      "lane": "dept-head-lane",
+      "col": 3,
+      "type": "external",
+      "icon": "person",
+      "label": "部門主管簽核",
+      "sublabel": "超過 3 天"
+    },
+    {
+      "id": "hr-review",
+      "lane": "hr-lane",
+      "col": 4,
+      "type": "external",
+      "icon": "person",
+      "label": "人資審核",
+      "sublabel": "特殊假別、證明文件"
+    },
+    {
+      "id": "escalate",
+      "lane": "system-lane",
+      "col": 2,
+      "type": "backend",
+      "icon": "clock",
+      "label": "逾時升級",
+      "sublabel": "24 小時提醒、48 小時升級",
+      "tag": "OP-30"
+    },
+    {
+      "id": "notify-approved",
+      "lane": "system-lane",
+      "col": 5,
+      "type": "backend",
+      "icon": "success",
+      "label": "核准通知",
+      "sublabel": "通知申請人與代理人"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-submit",
+      "from": "fill-request",
+      "to": "deputy-confirm",
+      "label": "送出",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-deputy-ok",
+      "from": "deputy-confirm",
+      "to": "supervisor-approve",
+      "label": "同意",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-deputy-no",
+      "from": "deputy-confirm",
+      "to": "fill-request",
+      "label": "拒絕，退回",
+      "role": "return"
+    },
+    {
+      "id": "e-over-3",
+      "from": "supervisor-approve",
+      "to": "dept-head-approve",
+      "label": "超過 3 天",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-special",
+      "from": "dept-head-approve",
+      "to": "hr-review",
+      "label": "特殊假別",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-hr-ok",
+      "from": "hr-review",
+      "to": "notify-approved",
+      "label": "核准",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-last-step",
+      "from": "supervisor-approve",
+      "to": "notify-approved",
+      "label": "最後一關核准",
+      "role": "branch"
+    },
+    {
+      "id": "e-dept-last",
+      "from": "dept-head-approve",
+      "to": "notify-approved",
+      "label": "最後一關核准",
+      "role": "branch"
+    },
+    {
+      "id": "e-return",
+      "from": "supervisor-approve",
+      "to": "fix-request",
+      "label": "退回補件",
+      "role": "branch"
+    },
+    {
+      "id": "e-resend",
+      "from": "fix-request",
+      "to": "supervisor-approve",
+      "label": "重送",
+      "role": "return"
+    },
+    {
+      "id": "e-reject",
+      "from": "supervisor-approve",
+      "to": "rejected",
+      "label": "駁回",
+      "variant": "security",
+      "role": "error"
+    },
+    {
+      "id": "e-timeout",
+      "from": "supervisor-approve",
+      "to": "escalate",
+      "label": "48 小時未簽",
+      "variant": "dashed",
+      "role": "async"
+    },
+    {
+      "id": "e-escalated",
+      "from": "escalate",
+      "to": "dept-head-approve",
+      "label": "改由上一層簽",
+      "variant": "dashed",
+      "role": "async"
+    },
+    {
+      "id": "e-cancel",
+      "from": "notify-approved",
+      "to": "withdraw",
+      "label": "請假開始前",
+      "role": "branch",
+      "route": "outside-right"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "動態關卡",
+      "items": [
+        "3 天以內只需直屬主管簽核",
+        "超過 3 天加部門主管",
+        "婚假、喪假、公假及超過 3 天病假須附證明，加人資審核；3 天內也由直屬主管轉人資"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "退回、駁回與逾時",
+      "items": [
+        "任一關都可退回補件或駁回，圖中以直屬主管為例",
+        "重送時從被退回的關卡重新簽，已簽紀錄保留",
+        "關卡 24 小時未簽發提醒，48 小時升級給上一層主管"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "撤回與銷假",
+      "items": [
+        "簽核完成前，員工可撤回假單",
+        "核准後、請假開始前可申請銷假，由直屬主管簡化簽核",
+        "駁回、撤回、銷假都會回補額度"
+      ]
+    }
+  ]
+}

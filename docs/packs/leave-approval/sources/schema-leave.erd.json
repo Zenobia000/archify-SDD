@@ -1,0 +1,759 @@
+{
+  "schema_version": 1,
+  "diagram_type": "erd",
+  "meta": {
+    "title": "請假資料表結構",
+    "locale": "zh-TW",
+    "output": "schema-leave.html",
+    "visual_preset": "reference",
+    "quality_profile": "showcase",
+    "viewpoint": {
+      "level": "implementation",
+      "concern": "data",
+      "roles": [
+        "software-designer",
+        "developer"
+      ],
+      "status": "current"
+    },
+    "trace": {
+      "id": "schema-leave",
+      "refines": [
+        "dfd-leave"
+      ],
+      "elements": {
+        "leave_requests": "D-10",
+        "leave_balances": "D-11",
+        "approval_steps": "D-12",
+        "delegations": "D-13"
+      }
+    },
+    "views": [
+      {
+        "id": "request-core",
+        "label": "假單與額度",
+        "focus": [
+          "leave_requests",
+          "employees",
+          "leave_types",
+          "leave_balances"
+        ],
+        "note": "假單指向申請人、代理人與假別；額度以員工、假別、年度為一列。"
+      },
+      {
+        "id": "approval",
+        "label": "簽核關卡與動作",
+        "focus": [
+          "approval_steps",
+          "approval_actions",
+          "leave_requests",
+          "delegations"
+        ],
+        "note": "每張假單展開多個關卡；每個核准、駁回、退回、加簽都寫一列動作。"
+      },
+      {
+        "id": "events",
+        "label": "附件與事件",
+        "focus": [
+          "attachments",
+          "outbox_events",
+          "leave_requests"
+        ],
+        "note": "證明文件掛在假單下；outbox 與假單狀態同交易寫入。"
+      }
+    ]
+  },
+  "layout": {
+    "mode": "grid",
+    "gapX": 84,
+    "gapY": 48
+  },
+  "entities": [
+    {
+      "id": "attachments",
+      "label": "attachments",
+      "tag": "假單",
+      "row": 0,
+      "col": 2,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "pk"
+        },
+        {
+          "name": "leave_request_id",
+          "type": "bigint",
+          "key": "fk",
+          "references": "leave_requests.id"
+        },
+        {
+          "name": "file_name",
+          "type": "varchar(255)｜檔名"
+        },
+        {
+          "name": "content_type",
+          "type": "varchar(100)"
+        },
+        {
+          "name": "size_bytes",
+          "type": "integer"
+        },
+        {
+          "name": "content",
+          "type": "bytea｜證明文件"
+        },
+        {
+          "name": "uploaded_by",
+          "type": "bigint｜上傳者",
+          "key": "fk",
+          "references": "employees.id"
+        },
+        {
+          "name": "uploaded_at",
+          "type": "timestamptz"
+        }
+      ],
+      "width": 320
+    },
+    {
+      "id": "outbox_events",
+      "label": "outbox_events",
+      "tag": "事件發佈",
+      "row": 0,
+      "col": 3,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "pk"
+        },
+        {
+          "name": "aggregate_type",
+          "type": "varchar(32)｜leave_request"
+        },
+        {
+          "name": "aggregate_id",
+          "type": "bigint｜假單 ID"
+        },
+        {
+          "name": "event_type",
+          "type": "varchar(64)｜leave.approved 等"
+        },
+        {
+          "name": "payload",
+          "type": "jsonb"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz｜與假單同交易"
+        },
+        {
+          "name": "published_at",
+          "type": "timestamptz｜NULL＝未發佈"
+        },
+        {
+          "name": "attempts",
+          "type": "smallint｜發佈次數"
+        }
+      ],
+      "width": 320
+    },
+    {
+      "id": "org_units",
+      "label": "org_units",
+      "tag": "組織人員",
+      "row": 1,
+      "col": 0,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "pk"
+        },
+        {
+          "name": "code",
+          "type": "varchar(20)｜部門代碼",
+          "key": "uk"
+        },
+        {
+          "name": "name",
+          "type": "varchar(80)｜部門名稱"
+        },
+        {
+          "name": "parent_id",
+          "type": "bigint｜上層單位",
+          "key": "fk",
+          "references": "org_units.id"
+        },
+        {
+          "name": "manager_id",
+          "type": "bigint｜部門主管",
+          "key": "fk",
+          "references": "employees.id"
+        },
+        {
+          "name": "synced_at",
+          "type": "timestamptz｜HRIS 同步"
+        }
+      ],
+      "width": 264
+    },
+    {
+      "id": "employees",
+      "label": "employees",
+      "tag": "組織人員",
+      "row": 1,
+      "col": 1,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "pk"
+        },
+        {
+          "name": "employee_no",
+          "type": "varchar(20)｜員工編號",
+          "key": "uk"
+        },
+        {
+          "name": "hris_id",
+          "type": "varchar(64)｜HRIS 主檔",
+          "key": "uk"
+        },
+        {
+          "name": "sso_subject",
+          "type": "varchar(128)｜OIDC sub",
+          "key": "uk"
+        },
+        {
+          "name": "name",
+          "type": "varchar(80)｜姓名"
+        },
+        {
+          "name": "email",
+          "type": "varchar(255)"
+        },
+        {
+          "name": "org_unit_id",
+          "type": "bigint｜所屬部門",
+          "key": "fk",
+          "references": "org_units.id"
+        },
+        {
+          "name": "manager_id",
+          "type": "bigint｜直屬主管",
+          "key": "fk",
+          "references": "employees.id"
+        },
+        {
+          "name": "job_grade",
+          "type": "varchar(16)｜職級"
+        },
+        {
+          "name": "status",
+          "type": "varchar(16)｜在職狀態"
+        },
+        {
+          "name": "synced_at",
+          "type": "timestamptz｜HRIS 同步"
+        }
+      ],
+      "width": 276
+    },
+    {
+      "id": "leave_requests",
+      "label": "leave_requests",
+      "tag": "假單",
+      "row": 1,
+      "col": 2,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "pk"
+        },
+        {
+          "name": "request_no",
+          "type": "varchar(20)｜假單編號",
+          "key": "uk"
+        },
+        {
+          "name": "employee_id",
+          "type": "bigint｜申請人",
+          "key": "fk",
+          "references": "employees.id"
+        },
+        {
+          "name": "deputy_id",
+          "type": "bigint｜代理人",
+          "key": "fk",
+          "references": "employees.id"
+        },
+        {
+          "name": "leave_type_id",
+          "type": "smallint｜假別",
+          "key": "fk",
+          "references": "leave_types.id"
+        },
+        {
+          "name": "starts_at",
+          "type": "timestamptz｜開始"
+        },
+        {
+          "name": "ends_at",
+          "type": "timestamptz｜結束"
+        },
+        {
+          "name": "hours",
+          "type": "numeric(6,1)｜請假時數"
+        },
+        {
+          "name": "reason",
+          "type": "varchar(500)｜事由"
+        },
+        {
+          "name": "status",
+          "type": "varchar(20)｜假單狀態"
+        },
+        {
+          "name": "current_seq",
+          "type": "smallint｜目前關卡序"
+        },
+        {
+          "name": "resume_seq",
+          "type": "smallint｜重送起始關卡"
+        },
+        {
+          "name": "round",
+          "type": "smallint｜送審輪次"
+        },
+        {
+          "name": "submitted_at",
+          "type": "timestamptz｜送出時間"
+        },
+        {
+          "name": "decided_at",
+          "type": "timestamptz｜結案時間"
+        },
+        {
+          "name": "version",
+          "type": "integer｜樂觀鎖"
+        }
+      ],
+      "width": 320
+    },
+    {
+      "id": "approval_steps",
+      "label": "approval_steps",
+      "tag": "簽核",
+      "row": 1,
+      "col": 3,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "pk"
+        },
+        {
+          "name": "leave_request_id",
+          "type": "bigint",
+          "key": "fk",
+          "references": "leave_requests.id"
+        },
+        {
+          "name": "seq",
+          "type": "smallint｜關卡順序"
+        },
+        {
+          "name": "round",
+          "type": "smallint｜送審輪次"
+        },
+        {
+          "name": "kind",
+          "type": "varchar(16)｜代理/主管/人資/加簽"
+        },
+        {
+          "name": "mode",
+          "type": "varchar(12)｜SEQUENTIAL/ALL/ANY"
+        },
+        {
+          "name": "approver_id",
+          "type": "bigint｜指定簽核人",
+          "key": "fk",
+          "references": "employees.id"
+        },
+        {
+          "name": "acting_approver_id",
+          "type": "bigint｜代理主管",
+          "key": "fk",
+          "references": "employees.id"
+        },
+        {
+          "name": "delegation_id",
+          "type": "bigint｜套用代理",
+          "key": "fk",
+          "references": "delegations.id"
+        },
+        {
+          "name": "inserted_by",
+          "type": "bigint｜加簽者",
+          "key": "fk",
+          "references": "employees.id"
+        },
+        {
+          "name": "status",
+          "type": "varchar(16)｜關卡狀態"
+        },
+        {
+          "name": "activated_at",
+          "type": "timestamptz｜開始簽核"
+        },
+        {
+          "name": "remind_at",
+          "type": "timestamptz｜24h 提醒"
+        },
+        {
+          "name": "due_at",
+          "type": "timestamptz｜48h 升級"
+        },
+        {
+          "name": "escalated_to",
+          "type": "bigint｜升級主管",
+          "key": "fk",
+          "references": "employees.id"
+        },
+        {
+          "name": "decided_at",
+          "type": "timestamptz｜完成時間"
+        }
+      ],
+      "width": 320
+    },
+    {
+      "id": "delegations",
+      "label": "delegations",
+      "tag": "代理設定",
+      "row": 2,
+      "col": 0,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "pk"
+        },
+        {
+          "name": "delegator_id",
+          "type": "bigint｜原主管",
+          "key": "fk",
+          "references": "employees.id"
+        },
+        {
+          "name": "delegate_id",
+          "type": "bigint｜代理主管",
+          "key": "fk",
+          "references": "employees.id"
+        },
+        {
+          "name": "starts_at",
+          "type": "timestamptz｜代理開始"
+        },
+        {
+          "name": "ends_at",
+          "type": "timestamptz｜代理結束"
+        },
+        {
+          "name": "reason",
+          "type": "varchar(200)｜原因"
+        },
+        {
+          "name": "revoked_at",
+          "type": "timestamptz｜提前取消"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz"
+        }
+      ],
+      "width": 264
+    },
+    {
+      "id": "leave_balances",
+      "label": "leave_balances",
+      "tag": "假別額度",
+      "row": 2,
+      "col": 1,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "pk"
+        },
+        {
+          "name": "employee_id",
+          "type": "bigint",
+          "key": "fk",
+          "references": "employees.id"
+        },
+        {
+          "name": "leave_type_id",
+          "type": "smallint",
+          "key": "fk",
+          "references": "leave_types.id"
+        },
+        {
+          "name": "year",
+          "type": "smallint｜年度"
+        },
+        {
+          "name": "granted_hours",
+          "type": "numeric(6,1)｜核給"
+        },
+        {
+          "name": "reserved_hours",
+          "type": "numeric(6,1)｜預扣"
+        },
+        {
+          "name": "used_hours",
+          "type": "numeric(6,1)｜實扣"
+        },
+        {
+          "name": "expires_on",
+          "type": "date｜到期日"
+        },
+        {
+          "name": "version",
+          "type": "integer｜樂觀鎖"
+        }
+      ],
+      "width": 276
+    },
+    {
+      "id": "leave_types",
+      "label": "leave_types",
+      "tag": "假別額度",
+      "row": 2,
+      "col": 2,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "smallint",
+          "key": "pk"
+        },
+        {
+          "name": "code",
+          "type": "varchar(16)｜假別代碼",
+          "key": "uk"
+        },
+        {
+          "name": "name",
+          "type": "varchar(20)｜特休、病假等"
+        },
+        {
+          "name": "min_unit_hours",
+          "type": "smallint｜最小單位 1"
+        },
+        {
+          "name": "proof_after_days",
+          "type": "numeric(4,1)｜須證明門檻"
+        },
+        {
+          "name": "hr_review",
+          "type": "boolean｜加人資關"
+        },
+        {
+          "name": "deducts_pay",
+          "type": "boolean｜扣薪假別"
+        },
+        {
+          "name": "active",
+          "type": "boolean"
+        }
+      ],
+      "width": 320
+    },
+    {
+      "id": "approval_actions",
+      "label": "approval_actions",
+      "tag": "簽核",
+      "row": 2,
+      "col": 3,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "pk"
+        },
+        {
+          "name": "step_id",
+          "type": "bigint",
+          "key": "fk",
+          "references": "approval_steps.id"
+        },
+        {
+          "name": "leave_request_id",
+          "type": "bigint",
+          "key": "fk",
+          "references": "leave_requests.id"
+        },
+        {
+          "name": "round",
+          "type": "smallint｜送審輪次"
+        },
+        {
+          "name": "action",
+          "type": "varchar(16)｜核准/駁回/退回/加簽"
+        },
+        {
+          "name": "actor_id",
+          "type": "bigint｜操作人",
+          "key": "fk",
+          "references": "employees.id"
+        },
+        {
+          "name": "on_behalf_of",
+          "type": "bigint｜被代理主管",
+          "key": "fk",
+          "references": "employees.id"
+        },
+        {
+          "name": "added_step_id",
+          "type": "bigint｜加簽新關卡",
+          "key": "fk",
+          "references": "approval_steps.id"
+        },
+        {
+          "name": "comment",
+          "type": "varchar(500)｜簽核意見"
+        },
+        {
+          "name": "acted_at",
+          "type": "timestamptz"
+        }
+      ],
+      "width": 320
+    }
+  ],
+  "relationships": [
+    {
+      "id": "employees_org_units",
+      "from": "employees",
+      "to": "org_units",
+      "label": "隸屬",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true
+    },
+    {
+      "id": "leave_requests_employees",
+      "from": "leave_requests",
+      "to": "employees",
+      "label": "申請／代理",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true
+    },
+    {
+      "id": "leave_requests_leave_types",
+      "from": "leave_requests",
+      "to": "leave_types",
+      "label": "假別",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true
+    },
+    {
+      "id": "leave_balances_employees",
+      "from": "leave_balances",
+      "to": "employees",
+      "label": "持有",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true
+    },
+    {
+      "id": "leave_balances_leave_types",
+      "from": "leave_balances",
+      "to": "leave_types",
+      "label": "額度",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true
+    },
+    {
+      "id": "attachments_leave_requests",
+      "from": "attachments",
+      "to": "leave_requests",
+      "label": "證明",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true
+    },
+    {
+      "id": "approval_steps_leave_requests",
+      "from": "approval_steps",
+      "to": "leave_requests",
+      "label": "關卡",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "identifying": true
+    },
+    {
+      "id": "approval_actions_approval_steps",
+      "from": "approval_actions",
+      "to": "approval_steps",
+      "label": "動作",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true
+    },
+    {
+      "id": "delegations_employees",
+      "from": "delegations",
+      "to": "employees",
+      "label": "主管代理",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "鍵與唯一性",
+      "items": [
+        "leave_balances 在 (employee_id, leave_type_id, year) 唯一：每人每年每種假別一列額度。",
+        "approval_steps 在 (leave_request_id, round, seq, approver_id) 唯一；同 seq 多列即為一組會簽。",
+        "employees、org_units 由 HRIS 同步；sso_subject 對應企業 SSO 的 OIDC sub。"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "關卡與動作",
+      "items": [
+        "mode：SEQUENTIAL 單人關卡；ALL 會簽全部同意才通過；ANY 任一人同意即通過。會簽任一駁回即駁回。",
+        "加簽寫入 approval_actions（action＝加簽），並新增 approval_steps 列，inserted_by 記錄加簽者。",
+        "退回後重送：round 加一，從 resume_seq 起重新簽；舊輪次的動作列保留不刪。",
+        "remind_at＝開始後 24 小時提醒；due_at＝48 小時，逾時升級並填 escalated_to。"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "圖中未畫的外鍵",
+      "items": [
+        "approval_steps 的 approver_id、acting_approver_id、inserted_by、escalated_to 皆指向 employees.id。",
+        "approval_actions 的 actor_id、on_behalf_of 指向 employees.id；added_step_id 指向 approval_steps.id。",
+        "org_units.manager_id、employees.manager_id 指向 employees.id；parent_id 為自我參照。"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "額度與 outbox",
+      "items": [
+        "送出時增加 reserved_hours（預扣）；核准時轉入 used_hours（實扣）；駁回、撤回、銷假時回補。",
+        "假單狀態變更與 outbox_events 列在同一交易寫入；published_at 為 NULL 者由發佈器送往 RabbitMQ。"
+      ]
+    }
+  ]
+}

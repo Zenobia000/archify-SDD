@@ -1,0 +1,305 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "LeaveFlow 請假業務資訊流",
+    "output": "biz-data-flow.html",
+    "locale": "zh-TW",
+    "visual_preset": "reference",
+    "quality_profile": "showcase",
+    "viewpoint": {
+      "level": "business",
+      "concern": "data",
+      "roles": [
+        "business-analyst",
+        "system-analyst"
+      ],
+      "status": "current"
+    },
+    "trace": {
+      "id": "biz-data-flow",
+      "drills_into": [
+        {
+          "node": "apply-leave",
+          "target": "dfd-leave.html",
+          "focus": "reserve-balance",
+          "label": "DFD 第一層"
+        }
+      ],
+      "elements": {
+        "apply-leave": "OP-10",
+        "approve-leave": "OP-20",
+        "sync-payroll": "OP-50"
+      }
+    },
+    "legend": {
+      "entries": {
+        "emphasis": {
+          "label": "主要假單文件"
+        },
+        "default": {
+          "label": "業務資訊"
+        },
+        "dashed": {
+          "label": "通知"
+        },
+        "database": {
+          "label": "業務紀錄"
+        }
+      }
+    }
+  },
+  "stages": [
+    {
+      "label": "人員"
+    },
+    {
+      "label": "申請與簽核"
+    },
+    {
+      "label": "業務紀錄"
+    },
+    {
+      "label": "核准後作業"
+    },
+    {
+      "label": "接收單位"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "employee",
+      "type": "external",
+      "icon": "person",
+      "label": "員工",
+      "sublabel": "申請人",
+      "stage": 0,
+      "row": 0
+    },
+    {
+      "id": "deputy",
+      "type": "external",
+      "icon": "person",
+      "label": "代理人",
+      "sublabel": "確認代理",
+      "stage": 0,
+      "row": 1
+    },
+    {
+      "id": "supervisor",
+      "type": "external",
+      "icon": "person",
+      "label": "主管",
+      "sublabel": "直屬／部門主管",
+      "stage": 0,
+      "row": 3
+    },
+    {
+      "id": "hr",
+      "type": "external",
+      "icon": "person",
+      "label": "人資",
+      "sublabel": "特殊假別審核",
+      "stage": 0,
+      "row": 4
+    },
+    {
+      "id": "apply-leave",
+      "type": "backend",
+      "icon": "calendar",
+      "label": "申請請假",
+      "sublabel": "填單、代理確認",
+      "stage": 1,
+      "row": 0,
+      "tag": "OP-10"
+    },
+    {
+      "id": "approve-leave",
+      "type": "backend",
+      "label": "逐關簽核",
+      "sublabel": "依假別與天數",
+      "stage": 1,
+      "row": 3,
+      "tag": "OP-20"
+    },
+    {
+      "id": "leave-file",
+      "type": "database",
+      "label": "假單紀錄",
+      "sublabel": "假單、簽核軌跡",
+      "stage": 1,
+      "row": 2
+    },
+    {
+      "id": "balance-book",
+      "type": "database",
+      "label": "假別額度",
+      "sublabel": "預扣、實扣、回補",
+      "stage": 2,
+      "row": 1
+    },
+    {
+      "id": "sync-payroll",
+      "type": "backend",
+      "label": "同步出勤薪資",
+      "sublabel": "核准後發送",
+      "stage": 3,
+      "row": 3,
+      "tag": "OP-50"
+    },
+    {
+      "id": "attendance-record",
+      "type": "external",
+      "label": "出勤紀錄",
+      "sublabel": "請假時段",
+      "stage": 4,
+      "row": 2
+    },
+    {
+      "id": "payroll-run",
+      "type": "external",
+      "label": "薪資結算",
+      "sublabel": "薪資作業",
+      "stage": 4,
+      "row": 3
+    },
+    {
+      "id": "team-calendar",
+      "type": "external",
+      "icon": "calendar",
+      "label": "團隊行事曆",
+      "sublabel": "不在辦公室",
+      "stage": 4,
+      "row": 4
+    }
+  ],
+  "flows": [
+    {
+      "id": "leave-form",
+      "from": "employee",
+      "to": "apply-leave",
+      "label": "假單＋證明文件",
+      "classification": "假別、時段",
+      "variant": "emphasis"
+    },
+    {
+      "id": "deputy-ok",
+      "from": "deputy",
+      "to": "apply-leave",
+      "label": "代理確認",
+      "classification": "同意或拒絕"
+    },
+    {
+      "id": "submitted-form",
+      "from": "apply-leave",
+      "to": "leave-file",
+      "label": "送出的假單",
+      "classification": "待簽核",
+      "variant": "emphasis"
+    },
+    {
+      "id": "hold-hours",
+      "from": "apply-leave",
+      "to": "balance-book",
+      "label": "預扣時數",
+      "classification": "以小時計"
+    },
+    {
+      "id": "pending-form",
+      "from": "leave-file",
+      "to": "approve-leave",
+      "label": "待簽假單",
+      "classification": "目前關卡",
+      "variant": "emphasis"
+    },
+    {
+      "id": "approver-opinion",
+      "from": "supervisor",
+      "to": "approve-leave",
+      "label": "簽核意見",
+      "classification": "核准／駁回／退回",
+      "variant": "emphasis"
+    },
+    {
+      "id": "hr-review",
+      "from": "hr",
+      "to": "approve-leave",
+      "label": "人資審核",
+      "classification": "證明文件"
+    },
+    {
+      "id": "settle-hours",
+      "from": "approve-leave",
+      "to": "balance-book",
+      "label": "實扣或回補",
+      "classification": "依簽核結果"
+    },
+    {
+      "id": "approved-form",
+      "from": "approve-leave",
+      "to": "sync-payroll",
+      "label": "核准假單",
+      "classification": "已核准",
+      "variant": "emphasis"
+    },
+    {
+      "id": "approval-notice",
+      "from": "approve-leave",
+      "to": "employee",
+      "label": "核准通知",
+      "classification": "申請人與代理人",
+      "variant": "dashed"
+    },
+    {
+      "id": "attendance-change",
+      "from": "sync-payroll",
+      "to": "attendance-record",
+      "label": "出勤異動",
+      "classification": "請假時段"
+    },
+    {
+      "id": "payroll-deduction",
+      "from": "sync-payroll",
+      "to": "payroll-run",
+      "label": "扣薪資料",
+      "classification": "扣薪假別",
+      "variant": "emphasis"
+    },
+    {
+      "id": "calendar-event",
+      "from": "sync-payroll",
+      "to": "team-calendar",
+      "label": "行事曆事件",
+      "classification": "請假期間"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "主要文件",
+      "items": [
+        "員工填寫假單，特殊假別附證明文件",
+        "代理人先確認代理，拒絕即退回申請人",
+        "假單依假別與天數逐關簽核"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "額度規則",
+      "items": [
+        "送出時預扣時數，核准時實扣",
+        "駁回、撤回、銷假時回補額度",
+        "以小時計，最小單位 1 小時"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "核准之後",
+      "items": [
+        "出勤紀錄更新請假時段",
+        "扣薪假別轉給薪資結算",
+        "寫入團隊行事曆，並通知申請人與代理人"
+      ]
+    }
+  ]
+}

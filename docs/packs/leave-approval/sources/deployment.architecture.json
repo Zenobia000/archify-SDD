@@ -1,0 +1,488 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "LeaveFlow 部署（目標）",
+    "output": "deployment.html",
+    "locale": "zh-TW",
+    "visual_preset": "reference",
+    "quality_profile": "showcase",
+    "viewpoint": {
+      "level": "system",
+      "concern": "structure",
+      "c4_level": "deployment",
+      "roles": [
+        "architect",
+        "operator"
+      ],
+      "status": "target"
+    },
+    "trace": {
+      "id": "deployment",
+      "refines": [
+        "c4-containers"
+      ],
+      "elements": {
+        "leave-api": "C-20",
+        "scheduler": "C-21",
+        "integration-worker": "C-22",
+        "message-queue": "C-30",
+        "leave-db": "C-40"
+      }
+    },
+    "legend": {
+      "entries": {
+        "external": {
+          "label": "使用者／外部系統"
+        },
+        "cloud": {
+          "label": "叢集入口"
+        },
+        "frontend": {
+          "label": "靜態網頁 Pod"
+        },
+        "backend": {
+          "label": "應用 Pod"
+        },
+        "messagebus": {
+          "label": "訊息佇列 StatefulSet"
+        },
+        "database": {
+          "label": "資料庫 StatefulSet"
+        }
+      }
+    }
+  },
+  "components": [
+    {
+      "id": "users",
+      "type": "external",
+      "icon": "person",
+      "label": "員工、主管、人資",
+      "sublabel": "[人員] 公司內網瀏覽器",
+      "pos": [
+        330,
+        100
+      ],
+      "size": [
+        200,
+        64
+      ]
+    },
+    {
+      "id": "ingress",
+      "type": "cloud",
+      "label": "內部 Ingress",
+      "sublabel": "Ingress Controller · TLS 終結 · 僅內網",
+      "pos": [
+        100,
+        240
+      ],
+      "size": [
+        660,
+        64
+      ]
+    },
+    {
+      "id": "employee-portal",
+      "type": "frontend",
+      "label": "員工入口",
+      "sublabel": "Deployment · 靜態檔",
+      "pos": [
+        100,
+        380
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "hr-console",
+      "type": "frontend",
+      "label": "人資後台",
+      "sublabel": "Deployment · 靜態檔",
+      "pos": [
+        355,
+        380
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "leave-api",
+      "type": "backend",
+      "label": "請假服務",
+      "sublabel": "Deployment · 3 副本",
+      "pos": [
+        520,
+        380
+      ],
+      "size": [
+        180,
+        380
+      ]
+    },
+    {
+      "id": "scheduler",
+      "type": "backend",
+      "label": "排程工作者",
+      "sublabel": "Deployment · 1 副本",
+      "pos": [
+        270,
+        538
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "message-queue",
+      "type": "messagebus",
+      "label": "訊息佇列",
+      "sublabel": "RabbitMQ · 3 節點",
+      "pos": [
+        790,
+        642
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "integration-worker",
+      "type": "backend",
+      "label": "整合工作者",
+      "sublabel": "Deployment · 2 副本",
+      "pos": [
+        790,
+        780
+      ],
+      "size": [
+        150,
+        320
+      ]
+    },
+    {
+      "id": "leave-db",
+      "type": "database",
+      "label": "請假資料庫",
+      "sublabel": "PostgreSQL 主節點",
+      "pos": [
+        520,
+        840
+      ],
+      "size": [
+        180,
+        64
+      ]
+    },
+    {
+      "id": "leave-db-replica",
+      "type": "database",
+      "label": "唯讀副本",
+      "sublabel": "PostgreSQL 串流複寫",
+      "pos": [
+        520,
+        980
+      ],
+      "size": [
+        180,
+        64
+      ]
+    },
+    {
+      "id": "sso",
+      "type": "external",
+      "label": "企業 SSO",
+      "sublabel": "[外部系統] OIDC",
+      "pos": [
+        1040,
+        438
+      ],
+      "size": [
+        150,
+        56
+      ]
+    },
+    {
+      "id": "hris",
+      "type": "external",
+      "label": "人事主檔 HRIS",
+      "sublabel": "[外部系統]",
+      "pos": [
+        1040,
+        542
+      ],
+      "size": [
+        150,
+        56
+      ]
+    },
+    {
+      "id": "attendance",
+      "type": "external",
+      "label": "出勤打卡系統",
+      "sublabel": "[外部系統]",
+      "pos": [
+        1040,
+        808
+      ],
+      "size": [
+        150,
+        56
+      ]
+    },
+    {
+      "id": "payroll",
+      "type": "external",
+      "label": "薪資系統",
+      "sublabel": "[外部系統]",
+      "pos": [
+        1040,
+        912
+      ],
+      "size": [
+        150,
+        56
+      ]
+    },
+    {
+      "id": "notify",
+      "type": "external",
+      "label": "通知服務",
+      "sublabel": "[外部系統] Email／Teams",
+      "pos": [
+        1040,
+        1016
+      ],
+      "size": [
+        150,
+        56
+      ]
+    },
+    {
+      "id": "calendar",
+      "type": "external",
+      "label": "行事曆",
+      "sublabel": "[外部系統] Exchange",
+      "pos": [
+        790,
+        1210
+      ],
+      "size": [
+        150,
+        56
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "公司內網",
+      "wraps": [
+        "users",
+        "ingress",
+        "employee-portal",
+        "hr-console",
+        "leave-api",
+        "scheduler",
+        "message-queue",
+        "integration-worker",
+        "leave-db",
+        "leave-db-replica"
+      ],
+      "pad": 80
+    },
+    {
+      "kind": "region",
+      "label": "資料中心",
+      "wraps": [
+        "ingress",
+        "employee-portal",
+        "hr-console",
+        "leave-api",
+        "scheduler",
+        "message-queue",
+        "integration-worker",
+        "leave-db",
+        "leave-db-replica"
+      ],
+      "pad": 60
+    },
+    {
+      "kind": "region",
+      "label": "K8s 叢集（地端）",
+      "wraps": [
+        "ingress",
+        "employee-portal",
+        "hr-console",
+        "leave-api",
+        "scheduler",
+        "message-queue",
+        "integration-worker",
+        "leave-db",
+        "leave-db-replica"
+      ],
+      "pad": 40
+    },
+    {
+      "kind": "region",
+      "label": "namespace: leaveflow",
+      "wraps": [
+        "employee-portal",
+        "hr-console",
+        "leave-api",
+        "scheduler",
+        "message-queue",
+        "integration-worker",
+        "leave-db",
+        "leave-db-replica"
+      ],
+      "pad": 20
+    },
+    {
+      "kind": "security-group",
+      "label": "資料層",
+      "wraps": [
+        "leave-db",
+        "leave-db-replica"
+      ],
+      "pad": 12
+    }
+  ],
+  "connections": [
+    {
+      "id": "users-ingress",
+      "from": "users",
+      "to": "ingress",
+      "label": "HTTPS · 內部 DNS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "ingress-portal",
+      "from": "ingress",
+      "to": "employee-portal",
+      "label": "/ · 靜態檔"
+    },
+    {
+      "id": "ingress-console",
+      "from": "ingress",
+      "to": "hr-console",
+      "label": "/hr · 靜態檔"
+    },
+    {
+      "id": "ingress-api",
+      "from": "ingress",
+      "to": "leave-api",
+      "label": "/api · HTTP",
+      "variant": "emphasis"
+    },
+    {
+      "id": "scheduler-api",
+      "from": "scheduler",
+      "to": "leave-api",
+      "label": "叢集內 HTTP"
+    },
+    {
+      "id": "api-sso",
+      "from": "leave-api",
+      "to": "sso",
+      "label": "驗證 token · OIDC",
+      "variant": "security"
+    },
+    {
+      "id": "api-hris",
+      "from": "leave-api",
+      "to": "hris",
+      "label": "組織與主管 · HTTPS"
+    },
+    {
+      "id": "api-queue",
+      "from": "leave-api",
+      "to": "message-queue",
+      "label": "AMQP · 5672",
+      "variant": "dashed"
+    },
+    {
+      "id": "api-db",
+      "from": "leave-api",
+      "to": "leave-db",
+      "label": "SQL · 5432",
+      "variant": "emphasis"
+    },
+    {
+      "id": "db-replicates",
+      "from": "leave-db",
+      "to": "leave-db-replica",
+      "label": "串流複寫",
+      "variant": "dashed"
+    },
+    {
+      "id": "queue-worker",
+      "from": "message-queue",
+      "to": "integration-worker",
+      "label": "AMQP",
+      "variant": "dashed"
+    },
+    {
+      "id": "worker-attendance",
+      "from": "integration-worker",
+      "to": "attendance",
+      "label": "HTTPS",
+      "variant": "dashed"
+    },
+    {
+      "id": "worker-payroll",
+      "from": "integration-worker",
+      "to": "payroll",
+      "label": "HTTPS",
+      "variant": "dashed"
+    },
+    {
+      "id": "worker-notify",
+      "from": "integration-worker",
+      "to": "notify",
+      "label": "HTTPS",
+      "variant": "dashed"
+    },
+    {
+      "id": "worker-calendar",
+      "from": "integration-worker",
+      "to": "calendar",
+      "label": "Graph API",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "部署假設",
+      "items": [
+        "目標部署：地端 K8s 叢集位於公司內網，只開放內部 Ingress",
+        "PostgreSQL 與 RabbitMQ 以 StatefulSet 跑在同一 namespace",
+        "副本數與節點數為設計假設，非量測結果"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "資料",
+      "items": [
+        "請假資料庫為單一主節點，串流複寫到唯讀副本",
+        "資料層只允許叢集內應用連線 5432"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "對外連線",
+      "items": [
+        "請假服務連企業 SSO 與 HRIS；整合工作者連出勤、薪資、通知與行事曆",
+        "外部系統位於公司內網之外，經防火牆放行的出站連線"
+      ]
+    }
+  ]
+}

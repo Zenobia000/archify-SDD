@@ -1,0 +1,399 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "主管核准假單",
+    "locale": "zh-TW",
+    "output": "seq-approve.html",
+    "visual_preset": "reference",
+    "quality_profile": "showcase",
+    "viewpoint": {
+      "level": "implementation",
+      "concern": "behavior",
+      "roles": [
+        "software-designer",
+        "developer"
+      ],
+      "status": "current"
+    },
+    "trace": {
+      "id": "seq-approve",
+      "refines": [
+        "activity-submit"
+      ],
+      "elements": {
+        "approval-service": "CP-25",
+        "routing-engine": "CP-24",
+        "outbox-publisher": "CP-28"
+      }
+    },
+    "legend": {
+      "entries": {
+        "default": {
+          "label": "同步呼叫"
+        },
+        "emphasis": {
+          "label": "主要核准路徑"
+        },
+        "security": {
+          "label": "代理權限檢查"
+        },
+        "dashed": {
+          "label": "非同步（outbox／AMQP）"
+        },
+        "return": {
+          "label": "回傳"
+        }
+      }
+    }
+  },
+  "participants": [
+    {
+      "id": "employee-portal",
+      "type": "frontend",
+      "label": "主管操作頁",
+      "sublabel": "員工入口 · React"
+    },
+    {
+      "id": "rest-controller",
+      "type": "backend",
+      "label": "REST 控制器",
+      "sublabel": "端點 · 驗證"
+    },
+    {
+      "id": "approval-service",
+      "type": "backend",
+      "label": "簽核服務",
+      "sublabel": "核准 · 會簽"
+    },
+    {
+      "id": "delegation-resolver",
+      "type": "security",
+      "label": "代理解析",
+      "sublabel": "代理主管"
+    },
+    {
+      "id": "routing-engine",
+      "type": "backend",
+      "label": "路由引擎",
+      "sublabel": "關卡規則"
+    },
+    {
+      "id": "balance-service",
+      "type": "backend",
+      "label": "額度服務",
+      "sublabel": "預扣 · 實扣"
+    },
+    {
+      "id": "leave-db",
+      "type": "database",
+      "label": "請假資料庫",
+      "sublabel": "PostgreSQL"
+    },
+    {
+      "id": "outbox-publisher",
+      "type": "backend",
+      "label": "事件發佈",
+      "sublabel": "outbox"
+    }
+  ],
+  "segments": [
+    {
+      "from": 164,
+      "to": 258,
+      "label": "核准請求"
+    },
+    {
+      "from": 260,
+      "to": 464,
+      "label": "權限與記錄"
+    },
+    {
+      "from": 466,
+      "to": 682,
+      "label": "會簽與下一關"
+    },
+    {
+      "from": 684,
+      "to": 1042,
+      "label": "實扣與結案"
+    },
+    {
+      "from": 1044,
+      "to": 1182,
+      "label": "非同步發佈"
+    }
+  ],
+  "messages": [
+    {
+      "id": "approve-request",
+      "from": "employee-portal",
+      "to": "rest-controller",
+      "y": 182,
+      "label": "POST 核准關卡",
+      "variant": "emphasis",
+      "note": "OIDC token 經身分驗證；附簽核意見"
+    },
+    {
+      "id": "call-approve",
+      "from": "rest-controller",
+      "to": "approval-service",
+      "y": 238,
+      "label": "approve(stepId)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "check-delegation",
+      "from": "approval-service",
+      "to": "delegation-resolver",
+      "y": 278,
+      "label": "檢查代理權限",
+      "variant": "security",
+      "note": "本人，或 delegations 期間內的代理主管"
+    },
+    {
+      "id": "delegation-ok",
+      "from": "delegation-resolver",
+      "to": "approval-service",
+      "y": 350,
+      "label": "允許 · 實際簽核人",
+      "variant": "return"
+    },
+    {
+      "id": "record-action",
+      "from": "approval-service",
+      "to": "leave-db",
+      "y": 384,
+      "label": "記錄核准動作",
+      "variant": "default",
+      "note": "開啟交易：新增 approval_actions 列，本人關卡設為已同意"
+    },
+    {
+      "id": "action-saved",
+      "from": "leave-db",
+      "to": "approval-service",
+      "y": 444,
+      "label": "已寫入",
+      "variant": "return"
+    },
+    {
+      "id": "check-group",
+      "from": "approval-service",
+      "to": "routing-engine",
+      "y": 484,
+      "label": "會簽是否全部同意",
+      "variant": "default",
+      "note": "ALL 全員同意、ANY 一人同意；任一駁回即駁回"
+    },
+    {
+      "id": "group-done",
+      "from": "routing-engine",
+      "to": "approval-service",
+      "y": 568,
+      "label": "本關完成",
+      "variant": "return"
+    },
+    {
+      "id": "next-step",
+      "from": "approval-service",
+      "to": "routing-engine",
+      "y": 602,
+      "label": "取得下一關",
+      "variant": "default"
+    },
+    {
+      "id": "no-next",
+      "from": "routing-engine",
+      "to": "approval-service",
+      "y": 632,
+      "label": "無下一關 · 結案",
+      "variant": "return",
+      "note": "若有下一關：啟用該關，設 24 小時提醒與 48 小時升級，提交交易後結束"
+    },
+    {
+      "id": "deduct",
+      "from": "approval-service",
+      "to": "balance-service",
+      "y": 702,
+      "label": "實扣額度",
+      "variant": "emphasis"
+    },
+    {
+      "id": "move-hours",
+      "from": "balance-service",
+      "to": "leave-db",
+      "y": 732,
+      "label": "預扣轉實扣",
+      "variant": "emphasis",
+      "note": "reserved_hours 減去時數，used_hours 加上時數"
+    },
+    {
+      "id": "hours-moved",
+      "from": "leave-db",
+      "to": "balance-service",
+      "y": 804,
+      "label": "已更新",
+      "variant": "return"
+    },
+    {
+      "id": "deducted",
+      "from": "balance-service",
+      "to": "approval-service",
+      "y": 834,
+      "label": "已實扣",
+      "variant": "return"
+    },
+    {
+      "id": "approve-outbox",
+      "from": "approval-service",
+      "to": "leave-db",
+      "y": 868,
+      "label": "假單核准＋寫 outbox",
+      "variant": "emphasis",
+      "note": "同一交易：假單改為 approved，新增 leave.approved 事件列"
+    },
+    {
+      "id": "committed",
+      "from": "leave-db",
+      "to": "approval-service",
+      "y": 956,
+      "label": "已提交",
+      "variant": "return"
+    },
+    {
+      "id": "approved",
+      "from": "approval-service",
+      "to": "rest-controller",
+      "y": 986,
+      "label": "已核准",
+      "variant": "return"
+    },
+    {
+      "id": "http-200",
+      "from": "rest-controller",
+      "to": "employee-portal",
+      "y": 1016,
+      "label": "200 已核准",
+      "variant": "return"
+    },
+    {
+      "id": "poll-outbox",
+      "from": "outbox-publisher",
+      "to": "leave-db",
+      "y": 1062,
+      "label": "讀取未發佈事件",
+      "variant": "dashed"
+    },
+    {
+      "id": "pending-event",
+      "from": "leave-db",
+      "to": "outbox-publisher",
+      "y": 1092,
+      "label": "leave.approved",
+      "variant": "return"
+    },
+    {
+      "id": "mark-published",
+      "from": "outbox-publisher",
+      "to": "leave-db",
+      "y": 1126,
+      "label": "發佈後標記已發佈",
+      "variant": "dashed",
+      "note": "經 RabbitMQ（AMQP）發佈；整合工作者同步出勤、薪資、行事曆，並通知申請人與代理人"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "employee-portal",
+      "from": 182,
+      "to": 1016,
+      "type": "frontend"
+    },
+    {
+      "participant": "rest-controller",
+      "from": 182,
+      "to": 1016,
+      "type": "backend"
+    },
+    {
+      "participant": "approval-service",
+      "from": 238,
+      "to": 986,
+      "type": "backend"
+    },
+    {
+      "participant": "delegation-resolver",
+      "from": 278,
+      "to": 350,
+      "type": "security"
+    },
+    {
+      "participant": "leave-db",
+      "from": 384,
+      "to": 444,
+      "type": "database"
+    },
+    {
+      "participant": "routing-engine",
+      "from": 484,
+      "to": 632,
+      "type": "backend"
+    },
+    {
+      "participant": "balance-service",
+      "from": 702,
+      "to": 834,
+      "type": "backend"
+    },
+    {
+      "participant": "leave-db",
+      "from": 732,
+      "to": 804,
+      "type": "database"
+    },
+    {
+      "participant": "leave-db",
+      "from": 868,
+      "to": 956,
+      "type": "database"
+    },
+    {
+      "participant": "outbox-publisher",
+      "from": 1062,
+      "to": 1126,
+      "type": "backend"
+    },
+    {
+      "participant": "leave-db",
+      "from": 1062,
+      "to": 1092,
+      "type": "database"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "一個交易完成結案",
+      "items": [
+        "記錄動作、實扣額度、假單核准與 outbox 列在同一個資料庫交易提交。",
+        "交易失敗則全部回滾，關卡維持待簽，不會出現已核准卻未扣額度。"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "會簽與動態關卡",
+      "items": [
+        "路由引擎依假別與天數產生關卡：≤ 3 天直屬主管，> 3 天加部門主管，須證明者加人資關。",
+        "會簽關卡全部同意才進下一關；任一駁回，整張假單駁回並回補預扣額度。"
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": "非同步後續",
+      "items": [
+        "主管在交易提交後即得到回應；同步出勤、薪資、行事曆與通知都在事件之後進行。",
+        "發佈失敗會重試；published_at 為空的事件列不會遺失。"
+      ]
+    }
+  ]
+}

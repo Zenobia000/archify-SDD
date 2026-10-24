@@ -1,0 +1,469 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "LeaveFlow 活動圖：送出與簽核假單",
+    "output": "activity-submit.html",
+    "locale": "zh-TW",
+    "visual_preset": "reference",
+    "quality_profile": "showcase",
+    "viewpoint": {
+      "level": "system",
+      "concern": "behavior",
+      "roles": [
+        "system-analyst",
+        "software-designer"
+      ],
+      "status": "current"
+    },
+    "trace": {
+      "id": "activity-submit",
+      "refines": [
+        "biz-process"
+      ],
+      "drills_into": [
+        {
+          "node": "approve-step",
+          "target": "seq-approve.html",
+          "label": "時序圖：主管核准"
+        }
+      ],
+      "elements": {
+        "submit": "OP-10",
+        "approve-step": "OP-20",
+        "return-for-fix": "OP-40"
+      }
+    },
+    "legend": {
+      "entries": {
+        "frontend": {
+          "label": "申請人動作"
+        },
+        "external": {
+          "label": "簽核人動作"
+        },
+        "backend": {
+          "label": "LeaveFlow 動作"
+        },
+        "security": {
+          "label": "判斷"
+        },
+        "database": {
+          "label": "結束狀態"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "applicant-lane",
+      "label": "申請人"
+    },
+    {
+      "id": "approver-lane",
+      "label": "簽核人"
+    },
+    {
+      "id": "system-lane",
+      "label": "LeaveFlow"
+    }
+  ],
+  "phases": [
+    {
+      "id": "submit-phase",
+      "label": "送出",
+      "fromCol": 0,
+      "toCol": 1,
+      "variant": "emphasis"
+    },
+    {
+      "id": "route-phase",
+      "label": "產生關卡",
+      "fromCol": 2,
+      "toCol": 3
+    },
+    {
+      "id": "approve-phase",
+      "label": "逐關簽核",
+      "fromCol": 4,
+      "toCol": 5
+    }
+  ],
+  "mainPath": [
+    "submit",
+    "balance-ok",
+    "deputy-ok",
+    "over-3-days",
+    "needs-hr",
+    "dispatch-step",
+    "approve-step",
+    "decision",
+    "all-agreed",
+    "approved"
+  ],
+  "nodes": [
+    {
+      "id": "submit",
+      "lane": "applicant-lane",
+      "col": 0,
+      "type": "frontend",
+      "icon": "start",
+      "label": "送出假單",
+      "sublabel": "假別、時段、代理人",
+      "tag": "OP-10"
+    },
+    {
+      "id": "return-for-fix",
+      "lane": "applicant-lane",
+      "col": 4,
+      "type": "frontend",
+      "label": "退回補件",
+      "sublabel": "補件後重送",
+      "tag": "OP-40"
+    },
+    {
+      "id": "rejected",
+      "lane": "applicant-lane",
+      "col": 5,
+      "type": "database",
+      "icon": "failure",
+      "label": "已駁回",
+      "sublabel": "回補額度"
+    },
+    {
+      "id": "add-signer",
+      "lane": "approver-lane",
+      "col": 3,
+      "type": "external",
+      "label": "加簽",
+      "sublabel": "臨時加一關",
+      "yOffset": 44
+    },
+    {
+      "id": "timed-out",
+      "lane": "approver-lane",
+      "col": 3,
+      "type": "security",
+      "icon": "decision",
+      "label": "逾時？",
+      "sublabel": "24 小時提醒",
+      "yOffset": -44
+    },
+    {
+      "id": "escalate",
+      "lane": "approver-lane",
+      "col": 2,
+      "type": "backend",
+      "icon": "clock",
+      "label": "升級",
+      "sublabel": "48 小時轉上一層",
+      "yOffset": -44
+    },
+    {
+      "id": "approve-step",
+      "lane": "approver-lane",
+      "col": 4,
+      "type": "external",
+      "icon": "person",
+      "label": "簽核關卡",
+      "sublabel": "核准、駁回或退回",
+      "tag": "OP-20"
+    },
+    {
+      "id": "decision",
+      "lane": "approver-lane",
+      "col": 5,
+      "type": "security",
+      "icon": "decision",
+      "label": "簽核結果？",
+      "sublabel": "核准／駁回／退回",
+      "yOffset": -44
+    },
+    {
+      "id": "all-agreed",
+      "lane": "approver-lane",
+      "col": 5,
+      "type": "security",
+      "icon": "decision",
+      "label": "會簽全部同意？",
+      "sublabel": "非會簽關卡視為是",
+      "yOffset": 44
+    },
+    {
+      "id": "balance-ok",
+      "lane": "system-lane",
+      "col": 0,
+      "type": "security",
+      "icon": "decision",
+      "label": "額度足夠？",
+      "sublabel": "預扣時數"
+    },
+    {
+      "id": "deputy-ok",
+      "lane": "system-lane",
+      "col": 1,
+      "type": "security",
+      "icon": "decision",
+      "label": "代理人同意？",
+      "sublabel": "等待代理人回覆"
+    },
+    {
+      "id": "over-3-days",
+      "lane": "system-lane",
+      "col": 2,
+      "type": "security",
+      "icon": "decision",
+      "label": "天數 > 3？",
+      "yOffset": -44
+    },
+    {
+      "id": "add-dept-step",
+      "lane": "system-lane",
+      "col": 2,
+      "type": "backend",
+      "label": "加部門主管關",
+      "yOffset": 44
+    },
+    {
+      "id": "needs-hr",
+      "lane": "system-lane",
+      "col": 3,
+      "type": "security",
+      "icon": "decision",
+      "label": "需人資審核？",
+      "sublabel": "特殊假別",
+      "yOffset": 44
+    },
+    {
+      "id": "add-hr-step",
+      "lane": "system-lane",
+      "col": 3,
+      "type": "backend",
+      "label": "加人資關",
+      "yOffset": -44
+    },
+    {
+      "id": "dispatch-step",
+      "lane": "system-lane",
+      "col": 4,
+      "type": "backend",
+      "label": "派送關卡",
+      "sublabel": "代理期間轉代理主管",
+      "yOffset": -44
+    },
+    {
+      "id": "approved",
+      "lane": "system-lane",
+      "col": 5,
+      "type": "database",
+      "icon": "success",
+      "label": "已核准",
+      "sublabel": "實扣額度、同步"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-submit",
+      "from": "submit",
+      "to": "balance-ok",
+      "label": "送出",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-balance-yes",
+      "from": "balance-ok",
+      "to": "deputy-ok",
+      "label": "足夠",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-balance-no",
+      "from": "balance-ok",
+      "to": "submit",
+      "label": "不足",
+      "variant": "security",
+      "role": "return"
+    },
+    {
+      "id": "e-deputy-yes",
+      "from": "deputy-ok",
+      "to": "over-3-days",
+      "label": "同意",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-deputy-no",
+      "from": "deputy-ok",
+      "to": "submit",
+      "label": "拒絕，退回",
+      "variant": "security",
+      "role": "return"
+    },
+    {
+      "id": "e-days-no",
+      "from": "over-3-days",
+      "to": "needs-hr",
+      "label": "否",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-days-yes",
+      "from": "over-3-days",
+      "to": "add-dept-step",
+      "label": "是",
+      "role": "branch"
+    },
+    {
+      "id": "e-dept-next",
+      "from": "add-dept-step",
+      "to": "needs-hr",
+      "role": "branch",
+      "toSide": "bottom"
+    },
+    {
+      "id": "e-hr-no",
+      "from": "needs-hr",
+      "to": "dispatch-step",
+      "label": "否",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-hr-yes",
+      "from": "needs-hr",
+      "to": "add-hr-step",
+      "label": "是",
+      "role": "branch"
+    },
+    {
+      "id": "e-hr-next",
+      "from": "add-hr-step",
+      "to": "dispatch-step",
+      "role": "branch"
+    },
+    {
+      "id": "e-dispatch",
+      "from": "dispatch-step",
+      "to": "approve-step",
+      "label": "通知簽核人",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-sign",
+      "from": "approve-step",
+      "to": "decision",
+      "label": "送出意見",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-approve",
+      "from": "decision",
+      "to": "all-agreed",
+      "label": "核准",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-reject",
+      "from": "decision",
+      "to": "rejected",
+      "label": "駁回",
+      "variant": "security",
+      "role": "error"
+    },
+    {
+      "id": "e-return",
+      "from": "decision",
+      "to": "return-for-fix",
+      "label": "退回",
+      "role": "branch"
+    },
+    {
+      "id": "e-resend",
+      "from": "return-for-fix",
+      "to": "approve-step",
+      "label": "從原關卡重簽",
+      "role": "return"
+    },
+    {
+      "id": "e-all-yes",
+      "from": "all-agreed",
+      "to": "approved",
+      "label": "最後一關",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-next-step",
+      "from": "all-agreed",
+      "to": "dispatch-step",
+      "label": "下一關",
+      "role": "return"
+    },
+    {
+      "id": "e-add-signer",
+      "from": "approve-step",
+      "to": "add-signer",
+      "label": "加簽",
+      "role": "branch"
+    },
+    {
+      "id": "e-add-dispatch",
+      "from": "add-signer",
+      "to": "dispatch-step",
+      "label": "插入新關",
+      "role": "branch"
+    },
+    {
+      "id": "e-wait",
+      "from": "approve-step",
+      "to": "timed-out",
+      "label": "未簽",
+      "variant": "dashed",
+      "role": "async"
+    },
+    {
+      "id": "e-escalate",
+      "from": "timed-out",
+      "to": "escalate",
+      "label": "48 小時",
+      "variant": "dashed",
+      "role": "async"
+    },
+    {
+      "id": "e-escalated",
+      "from": "escalate",
+      "to": "approve-step",
+      "label": "上一層主管簽",
+      "variant": "dashed",
+      "role": "async"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "送出與產生關卡",
+      "items": [
+        "送出時預扣額度；不足則不能送出",
+        "代理人拒絕即退回申請人",
+        "超過 3 天加部門主管關；婚假、喪假、公假及超過 3 天病假加人資關",
+        "主管在代理期間內，關卡自動轉給代理主管"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "簽核分支",
+      "items": [
+        "退回補件：重送時從被退回的關卡重新簽，已簽紀錄保留",
+        "加簽：簽核人可臨時加一關",
+        "會簽：多人並簽，全部同意才通過，任一駁回即駁回"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "逾時與結束",
+      "items": [
+        "關卡 24 小時未簽發提醒，48 小時自動升級給上一層主管",
+        "核准時實扣額度並同步出勤、薪資、行事曆",
+        "駁回時回補預扣的額度"
+      ]
+    }
+  ]
+}

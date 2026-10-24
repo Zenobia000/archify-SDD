@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "LeaveFlow 請假資料流（DFD 第一層）",
+    "output": "dfd-leave.html",
+    "locale": "zh-TW",
+    "visual_preset": "reference",
+    "quality_profile": "showcase",
+    "viewpoint": { "level": "system", "concern": "data", "roles": ["system-analyst"], "status": "current" },
+    "trace": {
+      "id": "dfd-leave",
+      "refines": ["biz-data-flow"],
+      "drills_into": [{ "node": "requests-store", "target": "schema-leave.html", "focus": "leave_requests", "label": "請假資料表" }],
+      "elements": {
+        "reserve-balance": "OP-10",
+        "record-approval": "OP-20",
+        "sync-changes": "OP-50",
+        "requests-store": "D-10",
+        "balances-store": "D-11",
+        "steps-store": "D-12",
+        "delegations-store": "D-13"
+      }
+    },
+    "legend": {
+      "entries": {
+        "emphasis": { "label": "假單主要資料流" },
+        "default": { "label": "資料流" },
+        "dashed": { "label": "非同步通知與同步" },
+        "database": { "label": "資料儲存" }
+      }
+    }
+  },
+  "stages": [
+    { "label": "外部實體" },
+    { "label": "送出處理" },
+    { "label": "資料儲存" },
+    { "label": "簽核與同步" },
+    { "label": "外部實體" }
+  ],
+  "nodes": [
+    { "id": "employee", "type": "external", "icon": "person", "label": "員工", "sublabel": "申請人", "stage": 0, "row": 0 },
+    { "id": "hris", "type": "external", "label": "人事主檔", "sublabel": "HRIS", "stage": 0, "row": 3 },
+    { "id": "calc-hours", "type": "backend", "label": "1.0 計算時數", "sublabel": "以小時計", "stage": 1, "row": 0 },
+    { "id": "reserve-balance", "type": "backend", "label": "2.0 預扣額度", "sublabel": "送出時預扣", "stage": 1, "row": 1 },
+    { "id": "build-steps", "type": "backend", "label": "3.0 產生關卡", "sublabel": "依假別與天數", "stage": 1, "row": 3 },
+    { "id": "balances-store", "type": "database", "label": "D2 額度", "sublabel": "各假別剩餘時數", "stage": 2, "row": 0 },
+    { "id": "requests-store", "type": "database", "label": "D1 假單", "sublabel": "時段、狀態", "stage": 2, "row": 1 },
+    { "id": "steps-store", "type": "database", "label": "D3 簽核關卡", "sublabel": "順序、簽核人", "stage": 2, "row": 3 },
+    { "id": "delegations-store", "type": "database", "label": "D4 代理設定", "sublabel": "代理主管、期間", "stage": 2, "row": 4 },
+    { "id": "record-approval", "type": "backend", "label": "4.0 記錄簽核", "sublabel": "核准、駁回、退回", "stage": 3, "row": 2 },
+    { "id": "sync-changes", "type": "backend", "label": "5.0 同步異動", "sublabel": "核准後發送", "stage": 3, "row": 4 },
+    { "id": "notify", "type": "external", "label": "通知服務", "sublabel": "Email／Teams", "stage": 4, "row": 1 },
+    { "id": "supervisor", "type": "external", "icon": "person", "label": "主管", "sublabel": "簽核人", "stage": 4, "row": 2 },
+    { "id": "attendance", "type": "external", "label": "出勤系統", "sublabel": "打卡紀錄", "stage": 4, "row": 3 },
+    { "id": "payroll", "type": "external", "label": "薪資系統", "sublabel": "扣薪計算", "stage": 4, "row": 4 }
+  ],
+  "flows": [
+    { "id": "leave-form", "from": "employee", "to": "calc-hours", "label": "假單資料", "classification": "假別、起訖時間", "variant": "emphasis" },
+    { "id": "leave-hours", "from": "calc-hours", "to": "reserve-balance", "label": "請假時數", "classification": "最小 1 小時", "variant": "emphasis" },
+    { "id": "reserved-hours", "from": "reserve-balance", "to": "balances-store", "label": "預扣時數", "classification": "檢查可用額度" },
+    { "id": "submitted-request", "from": "reserve-balance", "to": "requests-store", "label": "送出的假單", "classification": "待代理確認", "variant": "emphasis" },
+    { "id": "request-days", "from": "reserve-balance", "to": "build-steps", "label": "假別與天數", "classification": "證明文件" },
+    { "id": "org-chart", "from": "hris", "to": "build-steps", "label": "主管關係", "classification": "組織、職級" },
+    { "id": "delegate-lookup", "from": "delegations-store", "to": "build-steps", "label": "代理主管", "classification": "代理期間內" },
+    { "id": "approval-steps", "from": "build-steps", "to": "steps-store", "label": "簽核關卡", "classification": "依序或會簽", "variant": "emphasis" },
+    { "id": "pending-step", "from": "steps-store", "to": "record-approval", "label": "待簽關卡", "classification": "目前簽核人", "variant": "emphasis" },
+    { "id": "approver-decision", "from": "supervisor", "to": "record-approval", "label": "簽核決定", "classification": "核准／駁回／退回", "variant": "emphasis" },
+    { "id": "request-status", "from": "record-approval", "to": "requests-store", "label": "假單狀態", "classification": "狀態轉換" },
+    { "id": "settle-hours", "from": "record-approval", "to": "balances-store", "label": "實扣或回補", "classification": "依結果" },
+    { "id": "approval-notice", "from": "record-approval", "to": "notify", "label": "簽核通知", "classification": "申請人、代理人", "variant": "dashed" },
+    { "id": "approved-event", "from": "record-approval", "to": "sync-changes", "label": "核准事件", "classification": "全部關卡核准", "variant": "emphasis" },
+    { "id": "attendance-change", "from": "sync-changes", "to": "attendance", "label": "出勤異動", "classification": "請假時段", "variant": "dashed" },
+    { "id": "payroll-deduction", "from": "sync-changes", "to": "payroll", "label": "扣薪資料", "classification": "扣薪假別", "variant": "dashed" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "送出（1.0–3.0）",
+      "items": [
+        "以小時計算請假時數，最小單位 1 小時",
+        "送出時預扣 D2 額度，額度不足不得送出",
+        "依假別、天數與 HRIS 主管關係產生關卡，代理期間內改派代理主管"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "簽核（4.0）",
+      "items": [
+        "每次核准、駁回、退回都寫回 D3 關卡與 D1 假單狀態",
+        "全部關卡核准時實扣；駁回、撤回、銷假時回補 D2",
+        "關卡結果經通知服務告知申請人與代理人"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "同步（5.0）",
+      "items": [
+        "核准後非同步更新出勤系統",
+        "扣薪假別通知薪資系統"
+      ]
+    }
+  ]
+}

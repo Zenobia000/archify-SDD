@@ -1,0 +1,660 @@
+{
+  "schema_version": 1,
+  "diagram_type": "class",
+  "meta": {
+    "title": "簽核領域模型",
+    "locale": "zh-TW",
+    "output": "code-approval.html",
+    "visual_preset": "reference",
+    "quality_profile": "showcase",
+    "viewpoint": {
+      "level": "implementation",
+      "concern": "structure",
+      "c4_level": "code",
+      "roles": [
+        "software-designer",
+        "developer"
+      ],
+      "status": "current"
+    },
+    "trace": {
+      "id": "code-approval",
+      "refines": [
+        "c4-leave-api"
+      ],
+      "elements": {
+        "leave-request": "D-10",
+        "leave-balance": "D-11",
+        "approval-step": "D-12",
+        "delegation": "D-13"
+      }
+    },
+    "legend": {
+      "entries": {
+        "dependency": {
+          "label": "使用"
+        },
+        "association": {
+          "label": "參照"
+        },
+        "realization": {
+          "label": "實作介面"
+        },
+        "composition": {
+          "label": "組成（擁有生命週期）"
+        }
+      }
+    }
+  },
+  "layout": {
+    "mode": "grid",
+    "gapX": 56
+  },
+  "types": [
+    {
+      "id": "leave-repository",
+      "label": "LeaveRepository",
+      "kind": "interface",
+      "sublabel": "假單、關卡、額度的 SQL",
+      "row": 0,
+      "col": 0,
+      "methods": [
+        {
+          "name": "lockRequest",
+          "parameters": "id: LeaveRequestId",
+          "returns": "LeaveRequest",
+          "visibility": "public",
+          "abstract": true
+        },
+        {
+          "name": "save",
+          "parameters": "r: LeaveRequest",
+          "returns": "void",
+          "visibility": "public",
+          "abstract": true
+        },
+        {
+          "name": "appendOutbox",
+          "parameters": "e: OutboxEvent",
+          "returns": "void",
+          "visibility": "public",
+          "abstract": true
+        },
+        {
+          "name": "inTransaction",
+          "parameters": "work: Fn",
+          "returns": "T",
+          "visibility": "public",
+          "abstract": true
+        }
+      ]
+    },
+    {
+      "id": "approval-service",
+      "label": "ApprovalService",
+      "kind": "class",
+      "sublabel": "核准、駁回、退回、加簽",
+      "row": 0,
+      "col": 1,
+      "attributes": [
+        {
+          "name": "repo",
+          "type": "LeaveRepository",
+          "visibility": "private"
+        },
+        {
+          "name": "rules",
+          "type": "List<RoutingRule>",
+          "visibility": "private"
+        }
+      ],
+      "methods": [
+        {
+          "name": "approve",
+          "parameters": "stepId, actor",
+          "returns": "LeaveRequest",
+          "visibility": "public"
+        },
+        {
+          "name": "reject",
+          "parameters": "stepId, actor, reason",
+          "returns": "LeaveRequest",
+          "visibility": "public"
+        },
+        {
+          "name": "returnForRevision",
+          "parameters": "stepId, actor",
+          "returns": "LeaveRequest",
+          "visibility": "public"
+        },
+        {
+          "name": "addSigner",
+          "parameters": "stepId, signer",
+          "returns": "ApprovalStep",
+          "visibility": "public"
+        }
+      ]
+    },
+    {
+      "id": "routing-rule",
+      "label": "RoutingRule",
+      "kind": "interface",
+      "sublabel": "依假別與天數產生關卡",
+      "row": 0,
+      "col": 2.5,
+      "methods": [
+        {
+          "name": "appliesTo",
+          "parameters": "r: LeaveRequest",
+          "returns": "boolean",
+          "visibility": "public",
+          "abstract": true
+        },
+        {
+          "name": "steps",
+          "parameters": "r: LeaveRequest",
+          "returns": "List<ApprovalStep>",
+          "visibility": "public",
+          "abstract": true
+        }
+      ]
+    },
+    {
+      "id": "leave-status",
+      "label": "LeaveStatus",
+      "kind": "enum",
+      "sublabel": "假單狀態",
+      "row": 1,
+      "col": 0,
+      "attributes": [
+        {
+          "name": "DRAFT"
+        },
+        {
+          "name": "PENDING_DEPUTY"
+        },
+        {
+          "name": "IN_REVIEW"
+        },
+        {
+          "name": "RETURNED"
+        },
+        {
+          "name": "APPROVED"
+        },
+        {
+          "name": "REJECTED"
+        },
+        {
+          "name": "WITHDRAWN"
+        },
+        {
+          "name": "CANCEL_REQUESTED"
+        },
+        {
+          "name": "CANCELLED"
+        }
+      ]
+    },
+    {
+      "id": "leave-request",
+      "label": "LeaveRequest",
+      "kind": "class",
+      "sublabel": "聚合根：一張假單",
+      "row": 1,
+      "col": 1,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "LeaveRequestId",
+          "visibility": "public"
+        },
+        {
+          "name": "employeeId",
+          "type": "EmployeeId",
+          "visibility": "public"
+        },
+        {
+          "name": "deputyId",
+          "type": "EmployeeId",
+          "visibility": "public"
+        },
+        {
+          "name": "leaveType",
+          "type": "LeaveTypeCode",
+          "visibility": "public"
+        },
+        {
+          "name": "hours",
+          "type": "Hours",
+          "visibility": "public"
+        },
+        {
+          "name": "status",
+          "type": "LeaveStatus",
+          "visibility": "public"
+        },
+        {
+          "name": "round",
+          "type": "int",
+          "visibility": "public"
+        },
+        {
+          "name": "steps",
+          "type": "List<ApprovalStep>",
+          "visibility": "private"
+        }
+      ],
+      "methods": [
+        {
+          "name": "currentStep",
+          "parameters": "",
+          "returns": "ApprovalStep",
+          "visibility": "public"
+        },
+        {
+          "name": "advance",
+          "parameters": "next: ApprovalStep?",
+          "returns": "void",
+          "visibility": "public"
+        },
+        {
+          "name": "returnTo",
+          "parameters": "seq: int",
+          "returns": "void",
+          "visibility": "public"
+        },
+        {
+          "name": "withdraw",
+          "parameters": "",
+          "returns": "void",
+          "visibility": "public"
+        }
+      ]
+    },
+    {
+      "id": "days-threshold-rule",
+      "label": "DaysThresholdRule",
+      "kind": "class",
+      "sublabel": "> 3 天加部門主管",
+      "row": 1,
+      "col": 2,
+      "attributes": [
+        {
+          "name": "thresholdDays",
+          "type": "int",
+          "visibility": "private"
+        }
+      ],
+      "methods": [
+        {
+          "name": "appliesTo",
+          "parameters": "r",
+          "returns": "boolean",
+          "visibility": "public"
+        },
+        {
+          "name": "steps",
+          "parameters": "r",
+          "returns": "List<ApprovalStep>",
+          "visibility": "public"
+        }
+      ]
+    },
+    {
+      "id": "leave-type-rule",
+      "label": "LeaveTypeRule",
+      "kind": "class",
+      "sublabel": "須證明假別加人資關",
+      "row": 1,
+      "col": 3,
+      "attributes": [
+        {
+          "name": "proofTypes",
+          "type": "Set<LeaveTypeCode>",
+          "visibility": "private"
+        }
+      ],
+      "methods": [
+        {
+          "name": "appliesTo",
+          "parameters": "r",
+          "returns": "boolean",
+          "visibility": "public"
+        },
+        {
+          "name": "steps",
+          "parameters": "r",
+          "returns": "List<ApprovalStep>",
+          "visibility": "public"
+        }
+      ]
+    },
+    {
+      "id": "leave-balance",
+      "label": "LeaveBalance",
+      "kind": "class",
+      "sublabel": "每人每年每假別額度",
+      "row": 2,
+      "col": 0,
+      "attributes": [
+        {
+          "name": "employeeId",
+          "type": "EmployeeId",
+          "visibility": "public"
+        },
+        {
+          "name": "leaveType",
+          "type": "LeaveTypeCode",
+          "visibility": "public"
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "visibility": "public"
+        },
+        {
+          "name": "grantedHours",
+          "type": "Hours",
+          "visibility": "public"
+        },
+        {
+          "name": "reservedHours",
+          "type": "Hours",
+          "visibility": "public"
+        },
+        {
+          "name": "usedHours",
+          "type": "Hours",
+          "visibility": "public"
+        }
+      ],
+      "methods": [
+        {
+          "name": "reserve",
+          "parameters": "h: Hours",
+          "returns": "void",
+          "visibility": "public"
+        },
+        {
+          "name": "commit",
+          "parameters": "h: Hours",
+          "returns": "void",
+          "visibility": "public"
+        },
+        {
+          "name": "release",
+          "parameters": "h: Hours",
+          "returns": "void",
+          "visibility": "public"
+        }
+      ]
+    },
+    {
+      "id": "approval-step",
+      "label": "ApprovalStep",
+      "kind": "class",
+      "sublabel": "一個關卡（可為會簽）",
+      "row": 2,
+      "col": 1,
+      "attributes": [
+        {
+          "name": "seq",
+          "type": "int",
+          "visibility": "public"
+        },
+        {
+          "name": "mode",
+          "type": "StepMode",
+          "visibility": "public"
+        },
+        {
+          "name": "approvers",
+          "type": "Set<EmployeeId>",
+          "visibility": "public"
+        },
+        {
+          "name": "insertedBy",
+          "type": "EmployeeId?",
+          "visibility": "public"
+        },
+        {
+          "name": "dueAt",
+          "type": "Instant",
+          "visibility": "public"
+        },
+        {
+          "name": "escalatedTo",
+          "type": "EmployeeId?",
+          "visibility": "public"
+        },
+        {
+          "name": "actions",
+          "type": "List<ApprovalAction>",
+          "visibility": "private"
+        }
+      ],
+      "methods": [
+        {
+          "name": "record",
+          "parameters": "a: ApprovalAction",
+          "returns": "void",
+          "visibility": "public"
+        },
+        {
+          "name": "isComplete",
+          "parameters": "",
+          "returns": "boolean",
+          "visibility": "public"
+        },
+        {
+          "name": "isRejected",
+          "parameters": "",
+          "returns": "boolean",
+          "visibility": "public"
+        },
+        {
+          "name": "escalate",
+          "parameters": "to: EmployeeId",
+          "returns": "void",
+          "visibility": "public"
+        }
+      ]
+    },
+    {
+      "id": "step-mode",
+      "label": "StepMode",
+      "kind": "enum",
+      "sublabel": "關卡通過條件",
+      "row": 2,
+      "col": 2,
+      "attributes": [
+        {
+          "name": "SEQUENTIAL"
+        },
+        {
+          "name": "ALL"
+        },
+        {
+          "name": "ANY"
+        }
+      ]
+    },
+    {
+      "id": "delegation",
+      "label": "Delegation",
+      "kind": "class",
+      "sublabel": "主管代理期間",
+      "row": 3,
+      "col": 0,
+      "attributes": [
+        {
+          "name": "delegatorId",
+          "type": "EmployeeId",
+          "visibility": "public"
+        },
+        {
+          "name": "delegateId",
+          "type": "EmployeeId",
+          "visibility": "public"
+        },
+        {
+          "name": "startsAt",
+          "type": "Instant",
+          "visibility": "public"
+        },
+        {
+          "name": "endsAt",
+          "type": "Instant",
+          "visibility": "public"
+        }
+      ],
+      "methods": [
+        {
+          "name": "covers",
+          "parameters": "at: Instant",
+          "returns": "boolean",
+          "visibility": "public"
+        }
+      ]
+    },
+    {
+      "id": "approval-action",
+      "label": "ApprovalAction",
+      "kind": "record",
+      "sublabel": "核准、駁回、退回、加簽紀錄",
+      "row": 3,
+      "col": 1,
+      "attributes": [
+        {
+          "name": "actorId",
+          "type": "EmployeeId",
+          "visibility": "public"
+        },
+        {
+          "name": "onBehalfOf",
+          "type": "EmployeeId?",
+          "visibility": "public"
+        },
+        {
+          "name": "type",
+          "type": "ActionType",
+          "visibility": "public"
+        },
+        {
+          "name": "comment",
+          "type": "String",
+          "visibility": "public"
+        },
+        {
+          "name": "actedAt",
+          "type": "Instant",
+          "visibility": "public"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "service-uses-repo",
+      "from": "approval-service",
+      "to": "leave-repository",
+      "kind": "dependency",
+      "label": "交易讀寫"
+    },
+    {
+      "id": "service-has-rules",
+      "from": "approval-service",
+      "to": "routing-rule",
+      "kind": "association",
+      "label": "取得下一關"
+    },
+    {
+      "id": "days-implements",
+      "from": "days-threshold-rule",
+      "to": "routing-rule",
+      "kind": "realization"
+    },
+    {
+      "id": "type-implements",
+      "from": "leave-type-rule",
+      "to": "routing-rule",
+      "kind": "realization"
+    },
+    {
+      "id": "service-changes-request",
+      "from": "approval-service",
+      "to": "leave-request",
+      "kind": "dependency",
+      "label": "推進狀態"
+    },
+    {
+      "id": "request-status",
+      "from": "leave-request",
+      "to": "leave-status",
+      "kind": "association",
+      "label": "狀態"
+    },
+    {
+      "id": "request-balance",
+      "from": "leave-request",
+      "to": "leave-balance",
+      "kind": "dependency",
+      "label": "預扣／實扣"
+    },
+    {
+      "id": "request-owns-steps",
+      "from": "leave-request",
+      "to": "approval-step",
+      "kind": "composition",
+      "label": "1..* 關卡"
+    },
+    {
+      "id": "step-mode",
+      "from": "approval-step",
+      "to": "step-mode",
+      "kind": "association",
+      "label": "模式"
+    },
+    {
+      "id": "step-delegation",
+      "from": "approval-step",
+      "to": "delegation",
+      "kind": "dependency",
+      "label": "代理簽核"
+    },
+    {
+      "id": "step-owns-actions",
+      "from": "approval-step",
+      "to": "approval-action",
+      "kind": "composition",
+      "label": "0..* 動作"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "聚合邊界",
+      "items": [
+        "LeaveRequest 是聚合根：關卡與動作只能經由假單修改，並以 LeaveRepository 在同一交易保存。",
+        "退回後重送時 round 加一，從被退回的關卡重新簽；舊的 ApprovalAction 保留。"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "會簽與加簽",
+      "items": [
+        "StepMode.ALL：approvers 全部同意才完成；ANY：任一人同意即完成；任一駁回則 isRejected。",
+        "addSigner 在目前關卡後插入一關，insertedBy 記錄加簽的簽核人。"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "路由規則",
+      "items": [
+        "≤ 3 天由直屬主管簽；DaysThresholdRule 在 > 3 天時加部門主管關。",
+        "LeaveTypeRule 對婚假、喪假、公假與 > 3 天病假加人資審核關並要求證明。"
+      ]
+    }
+  ]
+}

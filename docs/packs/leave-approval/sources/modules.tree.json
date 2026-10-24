@@ -1,0 +1,217 @@
+{
+  "schema_version": 1,
+  "diagram_type": "tree",
+  "meta": {
+    "title": "請假服務模組分解",
+    "output": "modules.html",
+    "locale": "zh-TW",
+    "visual_preset": "reference",
+    "quality_profile": "showcase",
+    "viewpoint": {
+      "level": "implementation",
+      "concern": "structure",
+      "roles": [
+        "software-designer"
+      ],
+      "status": "current"
+    },
+    "trace": {
+      "id": "modules",
+      "refines": [
+        "c4-leave-api"
+      ]
+    }
+  },
+  "layout": {
+    "direction": "right",
+    "nodeMaxW": 220
+  },
+  "nodes": [
+    {
+      "id": "repo-root",
+      "label": "leave-api/",
+      "sublabel": "Java · Spring Boot"
+    },
+    {
+      "id": "web",
+      "label": "web/",
+      "parent": "repo-root",
+      "sublabel": "REST 控制器、身分驗證"
+    },
+    {
+      "id": "web-controller",
+      "label": "controller",
+      "parent": "web",
+      "sublabel": "端點、輸入驗證"
+    },
+    {
+      "id": "web-auth",
+      "label": "auth",
+      "parent": "web",
+      "sublabel": "OIDC token、角色與部門範圍"
+    },
+    {
+      "id": "leave",
+      "label": "leave/",
+      "parent": "repo-root",
+      "sublabel": "假單服務"
+    },
+    {
+      "id": "leave-request",
+      "label": "request",
+      "parent": "leave",
+      "sublabel": "建立、送出、撤回"
+    },
+    {
+      "id": "leave-cancel",
+      "label": "cancellation",
+      "parent": "leave",
+      "sublabel": "銷假申請"
+    },
+    {
+      "id": "balance",
+      "label": "balance/",
+      "parent": "repo-root",
+      "sublabel": "額度服務"
+    },
+    {
+      "id": "balance-calc",
+      "label": "calculator",
+      "parent": "balance",
+      "sublabel": "時數計算，最小 1 小時"
+    },
+    {
+      "id": "balance-ledger",
+      "label": "ledger",
+      "parent": "balance",
+      "sublabel": "預扣、實扣、回補"
+    },
+    {
+      "id": "approval",
+      "label": "approval/",
+      "parent": "repo-root",
+      "sublabel": "簽核（請假專用）"
+    },
+    {
+      "id": "approval-routing",
+      "label": "routing",
+      "parent": "approval",
+      "sublabel": "依假別與天數產生關卡"
+    },
+    {
+      "id": "approval-steps",
+      "label": "steps",
+      "parent": "approval",
+      "sublabel": "核准、退回、加簽、會簽"
+    },
+    {
+      "id": "approval-delegation",
+      "label": "delegation",
+      "parent": "approval",
+      "sublabel": "代理人與代理主管"
+    },
+    {
+      "id": "approval-escalation",
+      "label": "escalation",
+      "parent": "approval",
+      "sublabel": "24 時提醒、48 時升級"
+    },
+    {
+      "id": "integration",
+      "label": "integration/",
+      "parent": "repo-root",
+      "sublabel": "外部系統 adapter"
+    },
+    {
+      "id": "integration-hris",
+      "label": "hris",
+      "parent": "integration",
+      "sublabel": "組織與主管關係"
+    },
+    {
+      "id": "integration-attendance",
+      "label": "attendance",
+      "parent": "integration",
+      "sublabel": "出勤同步"
+    },
+    {
+      "id": "integration-payroll",
+      "label": "payroll",
+      "parent": "integration",
+      "sublabel": "扣薪假別通知"
+    },
+    {
+      "id": "integration-calendar",
+      "label": "calendar",
+      "parent": "integration",
+      "sublabel": "行事曆寫入"
+    },
+    {
+      "id": "persistence",
+      "label": "persistence/",
+      "parent": "repo-root",
+      "sublabel": "資料存取"
+    },
+    {
+      "id": "persistence-repository",
+      "label": "repository",
+      "parent": "persistence",
+      "sublabel": "假單、關卡、額度 SQL"
+    },
+    {
+      "id": "persistence-migration",
+      "label": "migration",
+      "parent": "persistence",
+      "sublabel": "PostgreSQL 結構版本"
+    },
+    {
+      "id": "outbox",
+      "label": "outbox/",
+      "parent": "repo-root",
+      "sublabel": "事件發佈"
+    },
+    {
+      "id": "outbox-publisher",
+      "label": "publisher",
+      "parent": "outbox",
+      "sublabel": "outbox_events 經 AMQP 發佈"
+    },
+    {
+      "id": "test",
+      "label": "test/",
+      "parent": "repo-root",
+      "sublabel": "自動化測試"
+    },
+    {
+      "id": "test-unit",
+      "label": "unit",
+      "parent": "test",
+      "sublabel": "路由規則、額度計算"
+    },
+    {
+      "id": "test-integration",
+      "label": "integration",
+      "parent": "test",
+      "sublabel": "repository、outbox"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "閱讀方式",
+      "items": [
+        "連線只代表包含關係，不代表呼叫",
+        "web、leave、balance、approval、persistence、outbox 各對應 C4 L3 的元件"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "邊界",
+      "items": [
+        "簽核規則全部在 approval/，不依賴外部 BPM",
+        "只有 persistence/ 直接寫 SQL；outbox/ 只讀 outbox 資料表",
+        "出勤、薪資、行事曆 adapter 由整合工作者在事件消費時使用"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "請假服務元件（C4 L3）",
+    "output": "c4-leave-api.html",
+    "locale": "zh-TW",
+    "visual_preset": "reference",
+    "quality_profile": "showcase",
+    "viewpoint": {
+      "level": "implementation",
+      "concern": "structure",
+      "c4_level": "component",
+      "roles": ["architect", "software-designer"],
+      "status": "current"
+    },
+    "trace": {
+      "id": "c4-leave-api",
+      "refines": ["c4-containers"],
+      "drills_into": [
+        { "node": "approval-service", "target": "code-approval.html", "focus": "approval-step", "label": "領域模型（C4 L4）" },
+        { "node": "routing-engine", "target": "seq-approve.html", "label": "時序圖：主管核准" }
+      ],
+      "elements": {
+        "leave-service": "CP-22",
+        "balance-service": "CP-23",
+        "routing-engine": "CP-24",
+        "approval-service": "CP-25",
+        "delegation-resolver": "CP-26",
+        "outbox-publisher": "CP-28"
+      }
+    },
+    "legend": {
+      "entries": {
+        "backend": { "label": "元件" },
+        "security": { "label": "元件：身分驗證" },
+        "frontend": { "label": "容器：網頁應用" },
+        "database": { "label": "容器：資料庫" },
+        "messagebus": { "label": "容器：訊息佇列" },
+        "external": { "label": "外部系統" }
+      }
+    }
+  },
+  "components": [
+    { "id": "hris", "type": "external", "label": "人事主檔 HRIS", "sublabel": "[外部系統] 主管關係", "pos": [40, 40], "size": [160, 64] },
+    { "id": "employee-portal", "type": "frontend", "label": "員工入口", "sublabel": "[容器] React SPA", "pos": [330, 40], "size": [170, 64] },
+    { "id": "hr-console", "type": "frontend", "label": "人資後台", "sublabel": "[容器] React SPA", "pos": [535, 40], "size": [170, 64] },
+    { "id": "sso", "type": "external", "label": "企業 SSO", "sublabel": "[外部系統] OIDC", "pos": [790, 40], "size": [160, 64] },
+
+    { "id": "auth-filter", "type": "security", "label": "身分驗證", "sublabel": "OIDC token · 角色與部門範圍", "pos": [290, 200], "size": [660, 64] },
+    { "id": "rest-controller", "type": "backend", "label": "REST 控制器", "sublabel": "端點 · 輸入驗證", "pos": [290, 320], "size": [660, 64] },
+    { "id": "routing-engine", "type": "backend", "label": "簽核路由引擎", "sublabel": "依假別與天數產生關卡", "pos": [40, 460], "size": [160, 64] },
+    { "id": "leave-service", "type": "backend", "label": "假單服務", "sublabel": "建立、送出、撤回、銷假", "pos": [290, 460], "size": [160, 64] },
+    { "id": "balance-service", "type": "backend", "label": "額度服務", "sublabel": "時數、預扣、實扣、回補", "pos": [540, 460], "size": [160, 64] },
+    { "id": "approval-service", "type": "backend", "label": "簽核服務", "sublabel": "核准、駁回、加簽、會簽", "pos": [790, 460], "size": [160, 64] },
+    { "id": "delegation-resolver", "type": "backend", "label": "代理解析", "sublabel": "代理人與代理主管", "pos": [40, 600], "size": [160, 64] },
+    { "id": "leave-repository", "type": "backend", "label": "資料存取", "sublabel": "假單、關卡、額度 SQL", "pos": [290, 600], "size": [410, 64] },
+    { "id": "outbox-publisher", "type": "backend", "label": "事件發佈", "sublabel": "交易性 outbox", "pos": [790, 740], "size": [160, 64] },
+
+    { "id": "leave-db", "type": "database", "label": "請假資料庫", "sublabel": "[容器] PostgreSQL", "pos": [290, 900], "size": [410, 64] },
+    { "id": "message-queue", "type": "messagebus", "label": "訊息佇列", "sublabel": "[容器] RabbitMQ", "pos": [1050, 740], "size": [150, 64] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "請假服務 [容器]", "wraps": ["auth-filter", "rest-controller", "routing-engine", "leave-service", "balance-service", "approval-service", "delegation-resolver", "leave-repository", "outbox-publisher"], "pad": 24 }
+  ],
+  "connections": [
+    { "id": "portal-requests", "from": "employee-portal", "to": "auth-filter", "label": "API 請求 · HTTPS/JSON", "variant": "emphasis" },
+    { "id": "console-requests", "from": "hr-console", "to": "auth-filter", "label": "API 請求 · HTTPS/JSON" },
+    { "id": "auth-verifies", "from": "auth-filter", "to": "sso", "label": "驗證 token · OIDC", "variant": "security" },
+    { "id": "auth-forwards", "from": "auth-filter", "to": "rest-controller", "label": "已驗證請求", "variant": "emphasis" },
+    { "id": "controller-leave", "from": "rest-controller", "to": "leave-service", "label": "建立、送出、撤回" },
+    { "id": "controller-approval", "from": "rest-controller", "to": "approval-service", "label": "核准、駁回、退回", "variant": "emphasis" },
+    { "id": "leave-routes", "from": "leave-service", "to": "routing-engine", "label": "產生關卡" },
+    { "id": "routing-org", "from": "routing-engine", "to": "hris", "label": "主管鏈 · HTTPS/JSON" },
+    { "id": "routing-delegation", "from": "routing-engine", "to": "delegation-resolver", "label": "代理主管" },
+    { "id": "leave-balance", "from": "leave-service", "to": "balance-service", "label": "預扣、回補" },
+    { "id": "approval-balance", "from": "approval-service", "to": "balance-service", "label": "實扣、回補", "variant": "emphasis" },
+    { "id": "leave-persists", "from": "leave-service", "to": "leave-repository", "label": "假單、關卡" },
+    { "id": "balance-persists", "from": "balance-service", "to": "leave-repository", "label": "額度" },
+    { "id": "approval-persists", "from": "approval-service", "to": "leave-repository", "label": "簽核紀錄", "variant": "emphasis" },
+    { "id": "repository-sql", "from": "leave-repository", "to": "leave-db", "label": "讀寫 · SQL", "variant": "emphasis" },
+    { "id": "outbox-reads", "from": "outbox-publisher", "to": "leave-db", "label": "輪詢 outbox · SQL", "variant": "dashed" },
+    { "id": "outbox-publishes", "from": "outbox-publisher", "to": "message-queue", "label": "發佈 · AMQP", "variant": "dashed" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "請求路徑",
+      "items": [
+        "每個請求先經身分驗證：OIDC token、角色與部門範圍",
+        "REST 控制器只做端點與輸入驗證，業務邏輯在服務元件"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "簽核內建",
+      "items": [
+        "送出時路由引擎依假別與天數產生關卡：≤ 3 天直屬主管，> 3 天加部門主管，需證明的假別加人資關",
+        "代理期間內的關卡由代理解析轉給代理主管",
+        "簽核服務處理核准、駁回、退回補件、加簽與會簽"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "交易與事件",
+      "items": [
+        "額度送出預扣、核准實扣，駁回、撤回、銷假回補",
+        "服務在同一交易寫入業務資料與 outbox_events；事件發佈元件再送到 RabbitMQ"
+      ]
+    }
+  ]
+}
