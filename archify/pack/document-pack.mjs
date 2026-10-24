@@ -8,13 +8,15 @@ import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 import { pack as validatePackSchema } from '../renderers/shared/generated-validators.mjs';
+import { packIndexHtml } from './pack-index.mjs';
+
+export { packIndexHtml };
 
 const cli = fileURLToPath(new URL('../bin/archify.mjs', import.meta.url));
-const LEVELS = ['business', 'system', 'implementation'];
-const CONCERNS = ['data', 'behavior', 'structure'];
 
 function diagnostic(code, message, subject = {}, supportedFixes = [], severity = 'error') {
   return { code, severity, message, subject, evidence: {}, supportedFixes };
@@ -168,11 +170,14 @@ function run(args) {
   return spawnSync(process.execPath, [cli, ...args], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
 }
 
-export function renderPack(packPath, outDir, { quality } = {}) {
+export function renderPack(packPath, outDir, { quality, browserCheck = false } = {}) {
   const analysis = analyzePack(packPath);
   if (!analysis.ok) return analysis;
   fs.mkdirSync(outDir, { recursive: true });
   const diagnostics = [...analysis.diagnostics];
+  // browser-check writes its receipt beside the artifact unless told otherwise;
+  // keep receipts out of the published directory so renders stay reproducible.
+  const receiptDir = browserCheck ? fs.mkdtempSync(path.join(os.tmpdir(), 'archify-pack-browser-')) : null;
   for (const artifact of analysis.artifacts) {
     const output = path.join(outDir, artifact.output);
     fs.mkdirSync(path.dirname(output), { recursive: true });
@@ -188,10 +193,21 @@ export function renderPack(packPath, outDir, { quality } = {}) {
     if (!artifact.check) {
       diagnostics.push(diagnostic('pack/check-failed', `${artifact.id} rendered but failed artifact checks.`, { artifact: artifact.id, output: artifact.output }, [`run archify check ${artifact.output} --json for details`]));
     }
+    // Explainers are plain pages; the viewer gate only applies to native diagrams.
+    if (browserCheck && artifact.type !== 'explainer') {
+      const browser = run(['browser-check', output, '--json', '--out-dir', receiptDir]);
+      let browserReceipt = null;
+      try { browserReceipt = JSON.parse(browser.stdout); } catch {}
+      artifact.browserCheck = browserReceipt?.ok === true;
+      if (!artifact.browserCheck) {
+        diagnostics.push(diagnostic('pack/browser-check-failed', `${artifact.id} failed the real-browser check: ${browserReceipt?.error || 'no usable receipt (is Chrome installed? set ARCHIFY_CHROME)'}`, { artifact: artifact.id, output: artifact.output }, [`run archify browser-check ${artifact.output} --json for details`]));
+      }
+    }
     const bytes = fs.readFileSync(output);
     artifact.sha256 = createHash('sha256').update(bytes).digest('hex');
     artifact.bytes = bytes.length;
   }
+  if (receiptDir) fs.rmSync(receiptDir, { recursive: true, force: true });
   const ok = !diagnostics.some((entry) => entry.severity === 'error');
   const manifest = packManifest(analysis);
   fs.writeFileSync(path.join(outDir, 'pack.manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
@@ -225,106 +241,8 @@ export function packManifest({ pack, artifacts, elements }) {
       drilledFrom: artifact.drilledFrom,
       elements: artifact.elements,
       ...(artifact.sha256 ? { sha256: artifact.sha256, bytes: artifact.bytes, check: artifact.check } : {}),
+      ...(artifact.browserCheck !== undefined ? { browserCheck: artifact.browserCheck } : {}),
     })),
     elements,
   };
-}
-
-function esc(value) {
-  return String(value ?? '').replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
-}
-
-function href(output) {
-  return output.split('/').map(encodeURIComponent).join('/');
-}
-
-const TYPE_LABEL = {
-  architecture: 'Architecture', workflow: 'Workflow', sequence: 'Sequence', dataflow: 'Data flow', lifecycle: 'Lifecycle',
-  erd: 'ERD', tree: 'Tree', class: 'Class', timeline: 'Timeline', waterfall: 'Waterfall', explainer: 'Explainer',
-};
-const C4_LABEL = { context: 'C4 L1', container: 'C4 L2', component: 'C4 L3', code: 'C4 L4', deployment: 'Deployment' };
-
-function artifactLink(artifact) {
-  const c4 = artifact.viewpoint?.c4_level ? `<span class="tag">${esc(C4_LABEL[artifact.viewpoint.c4_level])}</span>` : '';
-  return `<a class="artifact" href="${href(artifact.output)}"><span class="type">${esc(TYPE_LABEL[artifact.type])}</span>${c4}<strong>${esc(artifact.title)}</strong></a>`;
-}
-
-function hierarchyHtml(artifacts) {
-  const byId = new Map(artifacts.map((artifact) => [artifact.id, artifact]));
-  const roots = artifacts.filter((artifact) => !artifact.refines.some((id) => byId.has(id)));
-  const seen = new Set();
-  function branch(artifact) {
-    if (seen.has(artifact.id)) return '';
-    seen.add(artifact.id);
-    const children = artifact.refinedBy.map((id) => byId.get(id)).filter(Boolean);
-    return `<li>${artifactLink(artifact)}${children.length ? `<ul>${children.map(branch).join('')}</ul>` : ''}</li>`;
-  }
-  return `<ul class="tree">${roots.map(branch).join('')}</ul>`;
-}
-
-export function packIndexHtml(manifest) {
-  const { artifacts } = manifest;
-  const cell = (level, concern) => artifacts.filter((artifact) => artifact.viewpoint?.level === level && artifact.viewpoint?.concern === concern);
-  const matrix = `<table class="matrix"><thead><tr><th></th>${CONCERNS.map((concern) => `<th scope="col">${esc(concern)}</th>`).join('')}</tr></thead><tbody>${LEVELS.map((level) => `<tr><th scope="row">${esc(level)}</th>${CONCERNS.map((concern) => {
-    const items = cell(level, concern);
-    return `<td>${items.length ? items.map(artifactLink).join('') : '<span class="empty">—</span>'}</td>`;
-  }).join('')}</tr>`).join('')}</tbody></table>`;
-  const others = artifacts.filter((artifact) => !LEVELS.includes(artifact.viewpoint?.level) || !CONCERNS.includes(artifact.viewpoint?.concern));
-  const documents = manifest.documents.map((document) => `<section class="document"><h3><span class="doc-id">${esc(document.id)}</span> ${esc(document.title)}</h3>${document.summary ? `<p>${esc(document.summary)}</p>` : ''}<ol>${document.sections.map((section) => `<li><span class="section-id">${esc(section.id)}</span> ${esc(section.title)}<div class="links">${section.artifacts.map((id) => artifacts.find((artifact) => artifact.id === id)).filter(Boolean).map(artifactLink).join('')}</div></li>`).join('')}</ol></section>`).join('');
-  const elements = manifest.elements.length ? `<section><h2>Traceability</h2><table class="trace"><thead><tr><th>ID</th><th>Element</th><th>Owner</th><th>Status</th><th>Appears in</th></tr></thead><tbody>${manifest.elements.map((element) => `<tr><td><code>${esc(element.id)}</code></td><td>${esc(element.label)}</td><td>${esc(element.owner || '')}</td><td>${esc(element.status || '')}</td><td>${element.appearsIn.map((place) => {
-    const artifact = artifacts.find((entry) => entry.id === place.artifact);
-    return `<a href="${href(artifact.output)}#focus=${encodeURIComponent(place.node)}">${esc(artifact.title)}</a>`;
-  }).join(', ')}</td></tr>`).join('')}</tbody></table></section>` : '';
-  return `<!DOCTYPE html>
-<html lang="${esc(manifest.locale || 'en')}">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="archify pack">
-<title>${esc(manifest.title)}</title>
-<style>
-:root { --bg: #ffffff; --surface: #f2f3f3; --line: #d1d5db; --text: #16191f; --muted: #545b64; --navy: #232f3e; --accent: #0972d3; color-scheme: light dark; }
-@media (prefers-color-scheme: dark) { :root { --bg: #0f1b2a; --surface: #16202d; --line: #414d5c; --text: #e9ebed; --muted: #b6bec9; --navy: #0b1420; --accent: #539fe5; } }
-* { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', 'PingFang TC', 'Microsoft JhengHei', sans-serif; }
-header { background: var(--navy); color: #fff; padding: 28px 32px; }
-header h1 { margin: 0 0 4px; font-size: 26px; font-weight: 600; }
-header p { margin: 0; color: #d1d5db; }
-main { max-width: 1180px; margin: 0 auto; padding: 24px 32px 48px; }
-h2 { font-size: 19px; margin: 32px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
-table { border-collapse: collapse; width: 100%; }
-th, td { border: 1px solid var(--line); padding: 8px 10px; vertical-align: top; text-align: left; }
-thead th, tbody th { background: var(--surface); font-weight: 600; text-transform: capitalize; }
-.matrix td { width: 30%; }
-.artifact { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; margin: 2px 0 6px; color: var(--accent); text-decoration: none; }
-.artifact:hover strong { text-decoration: underline; }
-.artifact strong { font-weight: 600; }
-.type, .tag { font-size: 11px; padding: 0 6px; border: 1px solid var(--line); border-radius: 3px; color: var(--muted); }
-.empty { color: var(--muted); }
-.documents { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
-.document { border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; }
-.document h3 { margin: 0 0 6px; font-size: 16px; }
-.document p { margin: 0 0 8px; color: var(--muted); font-size: 13px; }
-.document ol { margin: 0; padding-left: 0; list-style: none; }
-.document li { padding: 6px 0; border-top: 1px solid var(--line); }
-.doc-id, .section-id { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--muted); }
-.links { margin-top: 4px; }
-.tree, .tree ul { list-style: none; padding-left: 18px; margin: 0; }
-.tree { padding-left: 0; }
-.tree ul { border-left: 1px solid var(--line); margin-left: 6px; }
-.trace td:first-child { white-space: nowrap; }
-@media (max-width: 720px) { main, header { padding-left: 16px; padding-right: 16px; } .matrix, .trace { display: block; overflow-x: auto; } }
-</style>
-</head>
-<body>
-<header><h1>${esc(manifest.title)}</h1>${manifest.subtitle ? `<p>${esc(manifest.subtitle)}</p>` : ''}</header>
-<main>
-<section><h2>Viewpoint matrix</h2>${matrix}${others.length ? `<p><strong>Other viewpoints:</strong></p><div>${others.map(artifactLink).join('')}</div>` : ''}</section>
-<section><h2>Documents</h2><div class="documents">${documents}</div></section>
-<section><h2>Refinement hierarchy</h2>${hierarchyHtml(artifacts)}</section>
-${elements}
-</main>
-</body>
-</html>
-`;
 }

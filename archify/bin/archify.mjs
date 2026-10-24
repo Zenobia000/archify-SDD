@@ -2203,7 +2203,7 @@ const COMMAND_USAGE = {
   'browser-check': '<output.html> [--json|--summary] [--require-provenance] [--out-dir <dir>]',
   'visual-check': '<output.html> [--json|--summary] [--require-provenance] [--out-dir <dir>]',
   guide: '[scenario or question] [--json] [--lang en|zh] [--role <role>] [--document BRD|SRS|SAD|SDD|ADR]',
-  pack: ['validate <document.pack.json> [--json]', 'render <document.pack.json> [--out <dir>] [--json] [--quality standard|showcase]'],
+  pack: ['validate <document.pack.json> [--json]', 'render <document.pack.json> [--out <dir>] [--json] [--quality standard|showcase] [--browser-check]'],
   brands: ['[name, alias, domain, or category] [--json]', 'capture <url> [--json]'],
   examples: '',
   doctor: '',
@@ -6284,10 +6284,12 @@ async function commandPack(args) {
   const qualityArgs = extractQualityArgs(args);
   let json = false;
   let out;
+  let browserCheck = false;
   const positional = [];
   for (let index = 0; index < qualityArgs.rest.length; index += 1) {
     const arg = qualityArgs.rest[index];
     if (arg === '--json') json = true;
+    else if (arg === '--browser-check') browserCheck = true;
     else if (arg === '--out') {
       out = qualityArgs.rest[index + 1];
       index += 1;
@@ -6297,14 +6299,14 @@ async function commandPack(args) {
     else positional.push(arg);
   }
   const [action, packPath] = positional;
-  if (!['validate', 'render'].includes(action) || !packPath || positional.length !== 2 || (action === 'validate' && (out || qualityArgs.quality))) {
+  if (!['validate', 'render'].includes(action) || !packPath || positional.length !== 2 || (action === 'validate' && (out || qualityArgs.quality || browserCheck))) {
     fail(usage());
   }
   const { analyzePack, renderPack } = await import('../pack/document-pack.mjs');
   const outDir = path.resolve(out || path.join(path.dirname(path.resolve(packPath)), 'artifacts'));
   const result = action === 'validate'
     ? analyzePack(packPath)
-    : renderPack(packPath, outDir, { quality: qualityArgs.quality });
+    : renderPack(packPath, outDir, { quality: qualityArgs.quality, browserCheck });
   const receipt = {
     schemaVersion: 1,
     ok: result.ok,
@@ -6317,6 +6319,7 @@ async function commandPack(args) {
       type: artifact.type,
       output: artifact.output,
       ...(artifact.sha256 ? { sha256: artifact.sha256, check: artifact.check } : {}),
+      ...(artifact.browserCheck !== undefined ? { browserCheck: artifact.browserCheck } : {}),
     })),
     diagnostics: result.diagnostics,
   };

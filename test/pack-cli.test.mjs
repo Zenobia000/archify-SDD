@@ -79,9 +79,11 @@ test('pack render writes every artifact, a manifest with inverse relations, and 
 
   const index = fs.readFileSync(path.join(out, 'index.html'), 'utf8');
   assert.match(index, /<title>Sample &lt;design&gt; pack<\/title>/);
-  assert.match(index, /href="context\.html"/);
-  assert.match(index, /href="calls\.html"/);
+  assert.match(index, /href="context\.html" target="_blank"/);
+  assert.match(index, /href="calls\.html" target="_blank"/);
   assert.match(index, /Viewpoint matrix/);
+  assert.deepEqual([...index.matchAll(/<section class="view"[^>]* data-view="([^"]+)"/g)].map((match) => match[1]), ['overview', 'context', 'calls']);
+  assert.equal(fs.readdirSync(out).filter((name) => name.includes('browser-check')).length, 0, 'no receipts beside the artifacts');
   assert.ok(fs.existsSync(path.join(out, 'context.html')));
   assert.match(fs.readFileSync(path.join(out, 'context.html'), 'utf8'), /id="archify-trace-data"/);
 });
@@ -104,6 +106,36 @@ test('pack validate reports each broken cross-diagram contract with a stable cod
     assert.equal(receipt.ok, false, code);
     assert.ok(receipt.diagnostics.some((entry) => entry.code === code), `${code}: ${JSON.stringify(receipt.diagnostics)}`);
   }
+});
+
+test('the pack page follows the pack locale', () => {
+  const directory = createScratchDirectory(path.join(os.tmpdir(), 'archify-pack-'));
+  const packPath = writePack(directory, ({ pack: data }) => { data.locale = 'zh-TW'; });
+  const out = path.join(directory, 'site');
+  const { status, stderr } = pack(['render', packPath, '--out', out]);
+  assert.equal(status, 0, stderr);
+  const index = fs.readFileSync(path.join(out, 'index.html'), 'utf8');
+  assert.match(index, /<html lang="zh-TW">/);
+  assert.match(index, /視角矩陣/);
+});
+
+test('--browser-check gates native diagrams in a real browser and leaves no receipts behind', {
+  skip: process.env.ARCHIFY_CHROME ? false : 'Set ARCHIFY_CHROME to run the pack browser gate.',
+  timeout: 120000,
+}, () => {
+  const directory = createScratchDirectory(path.join(os.tmpdir(), 'archify-pack-'));
+  const out = path.join(directory, 'site');
+  const { status, receipt, stderr } = pack(['render', writePack(directory), '--out', out, '--browser-check']);
+  assert.equal(status, 0, stderr || JSON.stringify(receipt.diagnostics));
+  assert.deepEqual(receipt.artifacts.map((artifact) => artifact.browserCheck), [true, true]);
+  assert.equal(fs.readdirSync(out).filter((name) => name.includes('browser-check')).length, 0);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(out, 'pack.manifest.json'), 'utf8')).artifacts[0].browserCheck, true);
+});
+
+test('--browser-check is a render option only', () => {
+  const directory = createScratchDirectory(path.join(os.tmpdir(), 'archify-pack-'));
+  const result = spawnSync(process.execPath, [cli, 'pack', 'validate', writePack(directory), '--browser-check'], { encoding: 'utf8' });
+  assert.equal(result.status, 2);
 });
 
 test('pack validate accepts a consistent pack without rendering anything', () => {

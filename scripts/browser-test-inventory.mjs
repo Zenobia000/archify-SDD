@@ -23,6 +23,7 @@ export const browserTestFiles = [
   'finder-browser.test.mjs',
   'intent-trace-browser.test.mjs',
   'semantic-lens-browser.test.mjs',
+  'pack-index-browser.test.mjs',
   'trace-drill-browser.test.mjs',
   'reading-address-browser.test.mjs',
   'route-probe-browser.test.mjs',

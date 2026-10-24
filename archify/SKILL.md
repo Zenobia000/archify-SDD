@@ -11,7 +11,7 @@ metadata:
 
 Create checked standalone HTML as a native diagram or a one-page explainer that answers a question.
 
-Run commands from your working directory. Unless the user names another location, give each new artifact request its own folder `.archify/<type>-<slug>-<YYYYMMDD-HHMMSS>/` there (local time, chosen once): keep the candidate and `<slug>.html` in it and reuse it for repairs. Native diagrams use `candidate.json` with `meta.output` relative to the working directory; explainers may use `candidate.archify.md` and a portable output filename. A later request gets a new folder. Replace `bin/archify.mjs` in every command with the installed package's absolute path, or its path relative to your working directory; CLI input and output paths resolve from that directory.
+Run commands from your working directory. Unless the user names another location, give each new artifact request its own folder `.archify/<type>-<slug>-<YYYYMMDD-HHMMSS>/` there (local time, chosen once): keep the candidate and `<slug>.html` in it and reuse it for repairs. Native diagrams use `candidate.json` with `meta.output` relative to the working directory; explainers may use `candidate.archify.md` and a portable output filename. A later request gets a new folder. A document pack is one request in one folder `.archify/pack-<slug>-<YYYYMMDD-HHMMSS>/`, laid out as in [Engineering viewpoints](references/sdd-viewpoints.md#pack-folder). Replace `bin/archify.mjs` in every command with the installed package's absolute path, or its path relative to your working directory; CLI input and output paths resolve from that directory.
 
 For a native diagram of a real codebase, read [Repository authoring](references/repository-authoring.md) while tracing the requested behavior. A system description uses the native steps below; a frozen candidate uses the handoff path.
 
@@ -72,7 +72,7 @@ Before the first candidate, use the authoring references and relevant repository
 
 When choosing among native diagram types is ambiguous, run `node bin/archify.mjs guide "<scenario>" --json`. Scenario proof examples are structural references, not facts to copy.
 
-When the user names a role (system analyst, architect, software designer), a design document (BRD, SRS, SAD, SDD, ADR), C4, or several related diagrams at different levels of detail, read [Engineering viewpoints](references/sdd-viewpoints.md). Set `meta.viewpoint` and `meta.trace` on each diagram, draw each C4 level as its own diagram linked by `drills_into`, and group them with `archify pack`.
+When the user names a role (system analyst, architect, software designer), a design document (BRD, SRS, SAD, SDD, ADR), C4, or several related diagrams at different levels of detail, read [Engineering viewpoints](references/sdd-viewpoints.md). That is one document pack, not separate requests: set `meta.viewpoint` and `meta.trace` on each diagram, draw each C4 level as its own diagram linked by `drills_into`, run `archify pack render`, and deliver the pack's `artifacts/index.html` as the single entry point.
 
 For an everyday subject, keep the same diagram modes and semantic types, then name them for the reader: use everyday `icon` values and `meta.legend` labels as in [Node icons](references/authoring-contract.md#node-icons). Ask for missing personal facts instead of inventing dates, amounts, or rules.
 
@@ -128,7 +128,7 @@ Reply in the user's language, as briefly as the result allows; the diagram carri
 - Lead with a clickable Markdown link to the HTML: a descriptive title, not the file name, and its absolute path, wrapped in `<...>` when it contains spaces.
 - When the user wants to understand a system or codebase rather than draw a described subject, add one or two sentences with the key takeaway. Skip sentences that only restate what the diagram obviously shows.
 - State anything that changes how the diagram should be read: the abstraction level or deliberately omitted parts when a reader might expect them, illustrative rather than measured values, missing source evidence, or requested content dropped or merged during repair.
-- For several diagrams, report completion once with a link to an existing overview or compact per-diagram links, not a directory path.
+- For several diagrams, report completion once with a link to an existing overview or compact per-diagram links, not a directory path. For a document pack the overview is `artifacts/index.html`.
 
 Do not recap commands, repair rounds, hashes, quality profiles, or check lists; they stay in the receipts. If asked whether the diagram was verified, answer in one line, such as “Automated checks passed; not visually reviewed.” Give receipt links and details only for reproducibility or troubleshooting. Disclose requested visual review that could not run, and claim visual inspection only when performed. Keep the required update notice under Update awareness.
 
