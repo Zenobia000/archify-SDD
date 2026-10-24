@@ -110,3 +110,20 @@ test('relations that leave the pack are dropped instead of rendered as dead link
   assert.doesNotMatch(html, /ghost/);
   assert.doesNotMatch(html, /C-99/);
 });
+
+test('an alternate view hangs under its diagram as a marked view, not as a refinement', () => {
+  const base = manifest();
+  const containers = artifact('containers', { refinedBy: ['detail'], views: ['deployment'] });
+  const detail = artifact('detail', { refines: ['containers'], viewpoint: { level: 'implementation', concern: 'structure', c4_level: 'component' } });
+  const deployment = artifact('deployment', { viewOf: ['containers'], viewpoint: { level: 'system', concern: 'structure', c4_level: 'deployment' } });
+  const html = packIndexHtml({ ...base, artifacts: [containers, detail, deployment], documents: [{ id: 'SAD', kind: 'SAD', title: 'A', sections: [{ id: 'SAD-2', title: 'C', artifacts: ['containers', 'detail', 'deployment'] }] }], elements: [] });
+  const from = html.indexOf('<ul class="tree">');
+  const tree = html.slice(from, html.indexOf('</section>', from));
+  assert.deepEqual(attr(tree, /data-nav="([^"]+)"/g), ['containers', 'detail', 'deployment'], 'the view is listed once, under its diagram');
+  assert.match(tree, /<li class="view-item"><a [^>]*data-nav="deployment"[^]*<span class="view-tag">view<\/span>/);
+  const section = (id) => html.slice(html.indexOf(`id="view-${id}"`), html.indexOf('</aside>', html.indexOf(`id="view-${id}"`)));
+  const panel = section('deployment');
+  assert.match(panel, /<h2>A view of<\/h2><ul><li><a href="#a=containers">↔ containers<\/a>/);
+  assert.doesNotMatch(panel, /<h2>Refines<\/h2>/);
+  assert.match(section('containers'), /<h2 class="sub">Alternate views<\/h2><ul><li><a href="#a=deployment">↔ deployment/);
+});

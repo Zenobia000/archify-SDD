@@ -6325,7 +6325,7 @@ async function commandPack(args) {
   };
   if (json) console.log(JSON.stringify(receipt, null, 2));
   else {
-    for (const entry of result.diagnostics) console.error(`[${entry.code}] ${entry.message}`);
+    for (const entry of result.diagnostics) console.error(`${entry.severity === 'error' ? '' : `${entry.severity} `}[${entry.code}] ${entry.message}`);
     if (result.ok) console.log(action === 'render' ? receipt.index : `pack ok: ${receipt.artifacts.length} artifacts`);
   }
   if (!result.ok) process.exitCode = 1;

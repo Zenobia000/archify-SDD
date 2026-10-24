@@ -51,6 +51,9 @@ test('viewpoint and trace reject values outside the contract', () => {
     { trace: { id: 'view', elements: { edge: 'c30' } } },
     { trace: { id: 'view', drills_into: [{ node: 'edge', target: '../escape.html' }] } },
     { trace: { id: 'view', drills_into: [{ node: 'edge', target: 'child.html', extra: true }] } },
+    { trace: { id: 'view', drill_from: [{ diagram: 'parent' }] } },
+    { trace: { id: 'view', drill_from: [] } },
+    { trace: { id: 'view', drill_from: [{ diagram: 'parent', node: 'edge', target: 'x.html' }] } },
   ];
   for (const meta of cases) {
     assert.equal(validators.architecture(architecture(meta)), false, JSON.stringify(meta));
@@ -97,4 +100,9 @@ test('trace references to unknown nodes fail with a stable diagnostic', () => {
   assert.ok(diagnostic, result.stdout);
   assert.match(JSON.stringify(receipt.diagnostics), /drills_into\/0\/node/);
   assert.match(JSON.stringify(receipt.diagnostics), /elements\/missing-element/);
+});
+
+test('drill_from names the node of the abstract diagram that opens this one', () => {
+  const accepted = architecture({ trace: { id: 'detail', refines: ['overview'], drill_from: [{ diagram: 'overview', node: 'gateway', focus: 'router', label: 'Detail' }] } });
+  assert.equal(validators.architecture(accepted), true, JSON.stringify(validators.architecture.errors));
 });

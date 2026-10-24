@@ -81,6 +81,23 @@
             }
           }
         },
+        "drill_from": {
+          "description": "Declared on the detailed diagram: the node of a more abstract diagram that opens this one. A pack adds the matching drill-down link to that diagram, so the abstract diagram needs no edit when this one is added later.",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["diagram", "node"],
+            "properties": {
+              "diagram": { "$ref": "#/$defs/id" },
+              "node": { "$ref": "#/$defs/id" },
+              "focus": { "$ref": "#/$defs/id" },
+              "label": { "type": "string", "minLength": 1, "maxLength": 48 }
+            }
+          }
+        },
         "elements": {
           "type": "object",
           "propertyNames": { "$ref": "#/$defs/id" },

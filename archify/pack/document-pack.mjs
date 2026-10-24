@@ -1,8 +1,13 @@
 // Document packs group related diagrams into design documents and check the
-// relations between them: every refined diagram and drill-down target must be
-// in the pack, refinement must not loop, and every declared element must
-// appear on at least one diagram. Rendering reuses the ordinary render and
-// check commands, then writes a manifest and a self-contained index page.
+// relations between them. A pack is whatever the reader asked for, so the
+// checks never require a complete set: a reference to a diagram that is not in
+// the pack is a warning and is left out of the output, which lets a diagram
+// written for a larger set stand alone and lets later diagrams light up their
+// links when they are added. Errors are reserved for things that cannot be
+// right at any size: duplicate ids, refinement loops, links to nodes that do
+// not exist, and a section that names a diagram the pack does not declare.
+// Rendering reuses the ordinary render and check commands, then writes a
+// manifest and a self-contained index page.
 
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
@@ -12,6 +17,7 @@ import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 import { pack as validatePackSchema } from '../renderers/shared/generated-validators.mjs';
+import { semanticNodes } from '../renderers/shared/cli.mjs';
 import { packIndexHtml } from './pack-index.mjs';
 
 export { packIndexHtml };
@@ -22,16 +28,23 @@ function diagnostic(code, message, subject = {}, supportedFixes = [], severity =
   return { code, severity, message, subject, evidence: {}, supportedFixes };
 }
 
+const warning = (code, message, subject, supportedFixes) => diagnostic(code, message, subject, supportedFixes, 'warning');
+
+// C4 zoom order. Deployment is another view of the containers, not a deeper level.
+const C4_DEPTH = { context: 1, container: 2, component: 3, code: 4 };
+const C4_BY_DEPTH = ['', 'context', 'container', 'component', 'code'];
+const DRILL_LABEL_MAX = 48;
+
 function readSource(baseDir, artifact) {
   const file = path.join(baseDir, artifact.source);
   const text = fs.readFileSync(file, 'utf8');
   if (artifact.source.endsWith('.md')) {
     // Explainer drafts title the page with the first `# Heading {#id}` line.
     const title = text.match(/^#\s+(.+?)(?:\s+\{#[^}]*\})?\s*$/m)?.[1]?.trim();
-    return { file, meta: { title: title || artifact.id } };
+    return { file, meta: { title: title || artifact.id }, nodes: new Map() };
   }
   const data = JSON.parse(text);
-  return { file, meta: data.meta || {} };
+  return { file, meta: data.meta || {}, nodes: new Map(semanticNodes(artifact.type, data).map((node) => [node.id, node.label])) };
 }
 
 function findCycle(ids, refines) {
@@ -55,6 +68,57 @@ function findCycle(ids, refines) {
     if (cycle) return cycle;
   }
   return null;
+}
+
+const c4Level = (artifact) => artifact.viewpoint?.c4_level;
+const sameJson = (left, right) => JSON.stringify(left) === JSON.stringify(right);
+
+// C4 zoom rules, as warnings: a pack may hold any subset of the levels, but
+// the levels it does hold must still nest. Absent levels are never reported.
+function c4Warnings(artifacts, byId) {
+  const found = [];
+  const seen = new Set();
+  const add = (key, entry) => { if (!seen.has(key)) { seen.add(key); found.push(entry); } };
+  for (const artifact of artifacts) {
+    const level = c4Level(artifact);
+    if (!level) continue;
+    const parents = artifact.traceRefines.map((id) => byId.get(id)).filter((parent) => c4Level(parent));
+    const expected = level === 'deployment' ? 'container' : C4_BY_DEPTH[C4_DEPTH[level] - 1];
+    for (const parent of parents) {
+      if (expected && c4Level(parent) !== expected) {
+        add(`skip:${artifact.id}>${parent.id}`, warning('pack/c4-level-skip',
+          `${artifact.id} (${level}) refines ${parent.id} (${c4Level(parent)}); a ${level} diagram refines a ${expected} diagram.`,
+          { artifact: artifact.id, parent: parent.id }, [`refine the ${expected} diagram instead, or draw it first`]));
+      }
+      if (level !== 'deployment' && c4Level(parent) === expected && !parent.drillsInto.some((link) => link.target === artifact.output)) {
+        add(`nav:${artifact.id}>${parent.id}`, warning('pack/c4-not-navigable',
+          `${artifact.id} refines ${parent.id}, but no node in ${parent.id} opens it.`,
+          { artifact: artifact.id, parent: parent.id }, [`add trace.drill_from to ${artifact.id}, naming the ${expected} node it details`]));
+      }
+    }
+    if (parents.length > 1) {
+      add(`parents:${artifact.id}`, warning('pack/c4-multiple-parents',
+        `${artifact.id} refines more than one C4 diagram: ${parents.map((parent) => parent.id).join(', ')}.`,
+        { artifact: artifact.id, parents: parents.map((parent) => parent.id) }, ['a C4 diagram zooms into exactly one parent']));
+    }
+  }
+  for (const artifact of artifacts) {
+    const byNode = new Map();
+    for (const link of artifact.drillsInto) {
+      const target = artifacts.find((other) => other.output === link.target);
+      if (!target || !c4Level(target)) continue;
+      const key = `${link.node}|${c4Level(target)}`;
+      byNode.set(key, [...(byNode.get(key) || []), target.id]);
+    }
+    for (const [key, targets] of byNode) {
+      if (targets.length > 1) {
+        add(`drill:${artifact.id}:${key}`, warning('pack/c4-ambiguous-drill',
+          `${artifact.id} node ${key.split('|')[0]} opens more than one ${key.split('|')[1]} diagram: ${targets.join(', ')}.`,
+          { artifact: artifact.id, node: key.split('|')[0], targets }, ['one container opens one component diagram; keep a single target']));
+      }
+    }
+  }
+  return found;
 }
 
 // Load the pack and every source, then check the cross-diagram contract.
@@ -105,15 +169,17 @@ export function analyzePack(packPath) {
       sourcePath: source.file,
       output: entry.output || `${entry.id}.html`,
       viewpoint: source.meta.viewpoint || entry.viewpoint || null,
-      refines: trace?.refines || [],
-      drillsInto: trace?.drills_into || [],
+      nodes: source.nodes,
+      authored: { refines: trace?.refines || [], drills: trace?.drills_into || [] },
+      refines: [...(trace?.refines || [])],
+      drillsInto: (trace?.drills_into || []).map((link) => ({ ...link })),
+      drillFrom: trace?.drill_from || [],
       elements: trace?.elements || {},
     };
     byId.set(artifact.id, artifact);
     artifacts.push(artifact);
   }
 
-  const outputs = new Map(artifacts.map((artifact) => [artifact.output, artifact.id]));
   for (const document of pack.documents) {
     for (const section of document.sections) {
       for (const id of section.artifacts) {
@@ -123,42 +189,85 @@ export function analyzePack(packPath) {
       }
     }
   }
+
+  // References to diagrams outside the pack are soft: the pack is what was
+  // asked for, so a diagram may mention neighbours that have not been drawn.
+  const outputs = new Set(artifacts.map((artifact) => artifact.output));
   for (const artifact of artifacts) {
-    for (const parent of artifact.refines) {
-      if (!byId.has(parent)) {
-        diagnostics.push(diagnostic('pack/missing-artifact', `${artifact.id} refines unknown artifact ${JSON.stringify(parent)}.`, { artifact: artifact.id, refines: parent }, ['refine an artifact declared in this pack']));
-      }
-    }
-    for (const link of artifact.drillsInto) {
-      if (!outputs.has(link.target)) {
-        diagnostics.push(diagnostic('pack/missing-artifact', `${artifact.id} drills into ${JSON.stringify(link.target)}, which no pack artifact outputs.`, { artifact: artifact.id, node: link.node, target: link.target }, ['point drills_into.target at another artifact output in this pack']));
-      }
+    const missing = [];
+    artifact.refines = artifact.refines.filter((parent) => byId.has(parent) || !missing.push(`refines ${parent}`));
+    artifact.drillsInto = artifact.drillsInto.filter((link) => outputs.has(link.target) || !missing.push(`${link.node} opens ${link.target}`));
+    artifact.drillFrom = artifact.drillFrom.filter((entry) => byId.has(entry.diagram) || !missing.push(`opened from ${entry.diagram}`));
+    if (missing.length) {
+      diagnostics.push(warning('pack/dangling-reference', `${artifact.id} points at diagrams that are not in this pack (${missing.join('; ')}); those links are left out.`, { artifact: artifact.id, references: missing }, ['add the diagram to the pack when it exists, or ignore this warning']));
     }
   }
-  const cycle = findCycle(artifacts.map((artifact) => artifact.id), new Map(artifacts.map((artifact) => [artifact.id, artifact.refines.filter((id) => byId.has(id))])));
+
+  // A detailed diagram may declare which node of an abstract one opens it, so
+  // adding it later needs no edit to the abstract diagram's source.
+  for (const artifact of artifacts) {
+    for (const entry of artifact.drillFrom) {
+      const parent = byId.get(entry.diagram);
+      if (parent.type !== 'explainer' && !parent.nodes.has(entry.node)) {
+        diagnostics.push(diagnostic('pack/unknown-node', `${artifact.id} is opened from ${entry.diagram} node ${JSON.stringify(entry.node)}, which that diagram does not have.`, { artifact: artifact.id, diagram: entry.diagram, node: entry.node }, [`use a node id from ${parent.source}`]));
+        continue;
+      }
+      if (!parent.drillsInto.some((link) => link.node === entry.node && link.target === artifact.output)) {
+        const label = entry.label || (artifact.title.length > DRILL_LABEL_MAX ? `${artifact.title.slice(0, DRILL_LABEL_MAX - 1)}…` : artifact.title);
+        parent.drillsInto.push({ node: entry.node, target: artifact.output, ...(entry.focus ? { focus: entry.focus } : {}), label });
+      }
+      if (!artifact.refines.includes(parent.id)) artifact.refines.push(parent.id);
+    }
+  }
+
+  const cycle = findCycle(artifacts.map((artifact) => artifact.id), new Map(artifacts.map((artifact) => [artifact.id, artifact.refines])));
   if (cycle) {
     diagnostics.push(diagnostic('pack/refines-cycle', `Refinement loops: ${cycle.join(' -> ')}.`, { cycle }, ['refines must point from detailed diagrams to more abstract ones']));
   }
 
-  const declared = new Map((pack.elements || []).map((element) => [element.id, element]));
+  // Element IDs are registered in the pack for owner and status, but a diagram
+  // that uses an ID the pack has not registered still traces: the ID takes the
+  // label of the node it marks.
+  const declared = new Map((pack.elements || []).map((element) => [element.id, { ...element }]));
+  const registered = new Set(declared.keys());
   const appearances = new Map([...declared.keys()].map((id) => [id, []]));
   for (const artifact of artifacts) {
+    const unregistered = [];
     for (const [node, elementId] of Object.entries(artifact.elements)) {
       if (!declared.has(elementId)) {
-        diagnostics.push(diagnostic('pack/undeclared-element', `${artifact.id} maps node ${node} to undeclared element ${elementId}.`, { artifact: artifact.id, node, element: elementId }, ['declare the element in elements[]']));
-        continue;
+        unregistered.push(elementId);
+        declared.set(elementId, { id: elementId, label: artifact.nodes.get(node) || node, declared: false });
+        appearances.set(elementId, []);
       }
       appearances.get(elementId).push({ artifact: artifact.id, node });
     }
-  }
-  for (const [id, places] of appearances) {
-    if (!places.length) {
-      diagnostics.push(diagnostic('pack/orphan-element', `Element ${id} appears on no diagram.`, { element: id }, ['map the element to a node through meta.trace.elements, or remove it']));
+    if (unregistered.length) {
+      diagnostics.push(warning('pack/undeclared-element', `${artifact.id} uses element IDs the pack does not register (${unregistered.join(', ')}); they are traced under their node labels.`, { artifact: artifact.id, elements: unregistered }, ['register the elements in the pack to give them an owner and status']));
     }
   }
+  const unused = [...registered].filter((id) => !appearances.get(id).length);
+  if (unused.length) {
+    diagnostics.push(warning('pack/orphan-element', `Registered elements appear on no diagram yet (${unused.join(', ')}).`, { elements: unused }, ['map them to nodes through meta.trace.elements when their diagrams are drawn']));
+  }
 
+  // The links a source needs once the pack is known; renderPack writes a
+  // corrected copy when this differs from what the author wrote.
+  for (const artifact of artifacts) {
+    artifact.traceRefines = [...artifact.refines];
+    artifact.needsRewrite = !sameJson(artifact.authored.refines, artifact.traceRefines)
+      || !sameJson(artifact.authored.drills, artifact.drillsInto);
+  }
+
+  diagnostics.push(...c4Warnings(artifacts, byId));
+
+  // Deployment is another view of the containers, not a level below them.
+  for (const artifact of artifacts) {
+    artifact.viewOf = c4Level(artifact) === 'deployment' ? artifact.refines : [];
+    if (artifact.viewOf.length) artifact.refines = [];
+  }
   for (const artifact of artifacts) {
     artifact.refinedBy = artifacts.filter((other) => other.refines.includes(artifact.id)).map((other) => other.id);
+    artifact.views = artifacts.filter((other) => other.viewOf.includes(artifact.id)).map((other) => other.id);
     artifact.drilledFrom = artifacts.filter((other) => other.drillsInto.some((link) => link.target === artifact.output))
       .map((other) => other.id);
   }
@@ -178,10 +287,25 @@ export function renderPack(packPath, outDir, { quality, browserCheck = false } =
   // browser-check writes its receipt beside the artifact unless told otherwise;
   // keep receipts out of the published directory so renders stay reproducible.
   const receiptDir = browserCheck ? fs.mkdtempSync(path.join(os.tmpdir(), 'archify-pack-browser-')) : null;
+  // A diagram whose links the pack had to complete or trim renders from a
+  // corrected copy; every other source renders untouched.
+  let effectiveDir = null;
+  const sourceFor = (artifact) => {
+    if (!artifact.needsRewrite || artifact.type === 'explainer') return artifact.sourcePath;
+    const data = JSON.parse(fs.readFileSync(artifact.sourcePath, 'utf8'));
+    const trace = { ...data.meta.trace };
+    if (artifact.traceRefines.length) trace.refines = artifact.traceRefines; else delete trace.refines;
+    if (artifact.drillsInto.length) trace.drills_into = artifact.drillsInto; else delete trace.drills_into;
+    data.meta = { ...data.meta, trace };
+    effectiveDir ??= fs.mkdtempSync(path.join(os.tmpdir(), 'archify-pack-source-'));
+    const file = path.join(effectiveDir, `${artifact.id}.json`);
+    fs.writeFileSync(file, JSON.stringify(data));
+    return file;
+  };
   for (const artifact of analysis.artifacts) {
     const output = path.join(outDir, artifact.output);
     fs.mkdirSync(path.dirname(output), { recursive: true });
-    const rendered = run(['render', artifact.type, artifact.sourcePath, output, ...(quality ? ['--quality', quality] : [])]);
+    const rendered = run(['render', artifact.type, sourceFor(artifact), output, ...(quality ? ['--quality', quality] : [])]);
     if (rendered.status !== 0) {
       diagnostics.push(diagnostic('pack/render-failed', `${artifact.id} failed to render: ${(rendered.stderr || rendered.stdout).trim().split('\n').slice(-3).join(' ')}`, { artifact: artifact.id, source: artifact.source }, [`run archify finalize ${artifact.type} on ${artifact.source} and repair it`]));
       continue;
@@ -208,6 +332,7 @@ export function renderPack(packPath, outDir, { quality, browserCheck = false } =
     artifact.bytes = bytes.length;
   }
   if (receiptDir) fs.rmSync(receiptDir, { recursive: true, force: true });
+  if (effectiveDir) fs.rmSync(effectiveDir, { recursive: true, force: true });
   const ok = !diagnostics.some((entry) => entry.severity === 'error');
   const manifest = packManifest(analysis);
   fs.writeFileSync(path.join(outDir, 'pack.manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
@@ -237,6 +362,8 @@ export function packManifest({ pack, artifacts, elements }) {
         .map((section) => ({ document: document.id, section: section.id, title: section.title }))),
       refines: artifact.refines,
       refinedBy: artifact.refinedBy,
+      ...(artifact.viewOf.length ? { viewOf: artifact.viewOf } : {}),
+      ...(artifact.views.length ? { views: artifact.views } : {}),
       drillsInto: artifact.drillsInto,
       drilledFrom: artifact.drilledFrom,
       elements: artifact.elements,

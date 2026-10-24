@@ -88,15 +88,13 @@ test('pack render writes every artifact, a manifest with inverse relations, and 
   assert.match(fs.readFileSync(path.join(out, 'context.html'), 'utf8'), /id="archify-trace-data"/);
 });
 
-test('pack validate reports each broken cross-diagram contract with a stable code', () => {
+test('pack validate stops on contracts that cannot hold at any size, each with a stable code', () => {
   const cases = [
     ['pack/missing-artifact', ({ pack: data }) => { data.documents[0].sections[0].artifacts.push('ghost'); }],
-    ['pack/missing-artifact', ({ calls }) => { calls.meta.trace.refines = ['ghost']; }],
-    ['pack/missing-artifact', ({ context }) => { context.meta.trace.drills_into[0].target = 'ghost.html'; }],
     ['pack/refines-cycle', ({ context }) => { context.meta.trace.refines = ['calls']; }],
-    ['pack/orphan-element', ({ pack: data }) => { data.elements.push({ id: 'C-99', label: 'Unused' }); }],
-    ['pack/undeclared-element', ({ pack: data }) => { data.elements = []; }],
     ['pack/trace-id-mismatch', ({ calls }) => { calls.meta.trace.id = 'renamed'; }],
+    ['pack/unknown-node', ({ calls }) => { calls.meta.trace.drill_from = [{ diagram: 'context', node: 'no-such-node' }]; }],
+    ['pack/duplicate-artifact', ({ pack: data }) => { data.artifacts.push({ ...data.artifacts[0] }); }],
     ['pack/schema', ({ pack: data }) => { data.artifacts[0].source = '../escape.json'; }],
   ];
   for (const [code, edit] of cases) {
@@ -104,7 +102,23 @@ test('pack validate reports each broken cross-diagram contract with a stable cod
     const { status, receipt } = pack(['validate', writePack(directory, edit)]);
     assert.equal(status, 1, code);
     assert.equal(receipt.ok, false, code);
-    assert.ok(receipt.diagnostics.some((entry) => entry.code === code), `${code}: ${JSON.stringify(receipt.diagnostics)}`);
+    assert.ok(receipt.diagnostics.some((entry) => entry.code === code && entry.severity === 'error'), `${code}: ${JSON.stringify(receipt.diagnostics)}`);
+  }
+});
+
+test('pack validate only warns about things a smaller pack legitimately lacks', () => {
+  const cases = [
+    ['pack/dangling-reference', ({ calls }) => { calls.meta.trace.refines = ['ghost']; }],
+    ['pack/dangling-reference', ({ context }) => { context.meta.trace.drills_into[0].target = 'ghost.html'; }],
+    ['pack/orphan-element', ({ pack: data }) => { data.elements.push({ id: 'C-99', label: 'Unused' }); }],
+    ['pack/undeclared-element', ({ pack: data }) => { data.elements = []; }],
+  ];
+  for (const [code, edit] of cases) {
+    const directory = createScratchDirectory(path.join(os.tmpdir(), 'archify-pack-'));
+    const { status, receipt } = pack(['validate', writePack(directory, edit)]);
+    assert.equal(status, 0, `${code}: ${JSON.stringify(receipt.diagnostics)}`);
+    assert.equal(receipt.ok, true, code);
+    assert.ok(receipt.diagnostics.some((entry) => entry.code === code && entry.severity === 'warning'), `${code}: ${JSON.stringify(receipt.diagnostics)}`);
   }
 });
 

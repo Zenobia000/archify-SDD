@@ -117,3 +117,5 @@
     .ac-side li a:hover { text-decoration:underline; }
     .ac-side .ac-none { color:var(--text-3); font-size:.8125rem; }
     .ac-side .ac-prompt { padding:.7rem; border-radius:3px; background:var(--surface-2); color:var(--text-2); font-size:.8125rem; line-height:1.55; }
+
+    .ac-view-tag { margin-left:.4rem; padding:0 .35rem; border:1px dashed var(--line-hi); border-radius:3px; font-size:.6875rem; color:var(--text-3); }

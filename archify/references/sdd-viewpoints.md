@@ -4,6 +4,30 @@ Read this when the user names a role (business analyst, system analyst,
 architect, software designer), a design document (BRD, SRS, SAD, SDD, ADR),
 C4, or asks for several related diagrams at different levels of detail.
 
+## Scope: draw what was asked
+
+The catalog below is a menu, not a checklist. Each viewpoint is a standalone
+diagram, so produce the smallest set that answers the request and let the
+reader ask for more.
+
+| The user asks for | Produce |
+|---|---|
+| one viewpoint ("a C4 container diagram", "the checkout sequence", "an ER diagram") | one ordinary diagram with `meta.viewpoint`; no pack, no neighbours, no other levels |
+| several named diagrams | one pack holding exactly those diagrams |
+| one document ("the SAD diagrams") | one pack holding that document's diagrams the facts support; not the other documents |
+| a role ("what does an architect draw?") | no diagram yet: run `guide --role <role>`, show the menu, ask which |
+| "now the components of the API" for an existing pack | add one diagram to that pack; edit nothing else |
+| the whole design-document set, explicitly | the full pack |
+
+Rules that keep requests small:
+
+- Draw only the requested viewpoints. Do not add the level above "for context"
+  or the level below "for completeness", and never fill the matrix.
+- Name a neighbour in `refines`, `drills_into` or `drill_from` only when it is
+  in the pack or the user asked for it. A link to a diagram that is not in the
+  pack is dropped with a warning, so nothing breaks when it is not drawn.
+- Finish with one line offering the natural next level or view, and stop.
+
 ## Viewpoint matrix
 
 Each viewpoint is a native diagram type with a fixed purpose. Rows are the
@@ -57,11 +81,20 @@ Every native diagram may declare where it sits and how it relates to others:
 
 - `trace.id` is the diagram's stable ID and must equal its pack artifact ID.
 - `refines` points to more abstract diagrams only: a DFD refines the business
-  data flow, a sequence refines an activity, L3 refines L2.
-- `drills_into` adds a link to the node's detail panel. `target` is the sibling
-  artifact's output file; `focus` opens it on a node.
+  data flow, a sequence refines an activity, L3 refines L2. A diagram has one
+  parent.
+- `drill_from` is the way to link a detailed diagram: the detailed diagram
+  names the node of the abstract one that opens it, for example
+  `[{ "diagram": "c4-l2-containers", "node": "booking-api", "focus": "booking-service" }]`.
+  The pack adds the link to the abstract diagram and treats it as the parent,
+  so adding L3 later needs no edit to L2.
+- `drills_into` is the same link written on the abstract diagram. Use it only
+  when the target already exists. `target` is the sibling artifact's output
+  file; `focus` opens it on a node.
 - `elements` maps node IDs to stable element IDs (`C-20`, `OP-10`) so one
-  element can be followed across diagrams. Declare each ID once in the pack.
+  element can be followed across diagrams. The pack may register an ID to give
+  it an owner and status; an unregistered ID is still traced under its node
+  label.
 - `status` separates what exists (`current`) from what is partly built
   (`partial`) or planned (`target`). Never mark planned work as current.
 
@@ -87,13 +120,33 @@ Name the legend entries for C4 roles through `meta.legend.entries`, for example
 
 Keep each level honest: L1 shows one box for the system, L2 shows no classes,
 L3 stays inside one container. Draw the next level as a new diagram and link
-it with `drills_into` instead of nesting detail.
+it with `drill_from` instead of nesting detail.
+
+### How the levels relate
+
+| Level | Diagrams per system | Relation to the level above |
+|---|---|---|
+| L1 context | 1 | none |
+| L2 container | 1 | 1 : 1 with L1 |
+| L3 component | one per container that has structure worth showing | many : 1, each opened from its own container node |
+| L4 code | a few, for core components only | many : 1, each opened from its own component node |
+
+Most containers never get an L3: a database opens a schema diagram, a small
+worker needs nothing. Absence is normal; draw an L3 only when asked.
+Deployment is another **view** of the L2 containers, not a level below them:
+give it `c4_level: deployment`, `refines` the container diagram, and the pack
+lists it as an alternate view rather than as a child.
+
+`pack validate` warns when the levels a pack does hold do not nest:
+`pack/c4-level-skip` (an L3 refining L1), `pack/c4-multiple-parents`,
+`pack/c4-not-navigable` (no node opens the child; add `drill_from`) and
+`pack/c4-ambiguous-drill` (one node opens two diagrams of the same level).
 
 ## Document packs
 
-A pack groups the diagrams of one system into documents. Treat "a role", "a
-document", "C4 levels" or "the full set" as one pack request, not as several
-single-diagram requests.
+A pack groups the diagrams the user asked for into documents. Use one when
+two or more diagrams belong together (see Scope); a single diagram never needs
+one.
 
 ### Pack folder
 
@@ -140,12 +193,21 @@ node bin/archify.mjs pack render <slug>.pack.json --quality showcase --browser-c
 
 `render` checks every diagram with the same gates as `render` and `check`,
 and `--browser-check` adds the real-browser gate for native diagrams
-(explainers skip it). Repair diagnostics in the sources, not in the output:
-`pack/missing-artifact`, `pack/refines-cycle`, `pack/orphan-element`,
-`pack/undeclared-element`, `pack/trace-id-mismatch`, `pack/render-failed`,
-`pack/check-failed`, `pack/browser-check-failed`. Fix a failing diagram with
+(explainers skip it). Repair diagnostics in the sources, not in the output.
+
+Errors stop the render and mean something cannot be right at any size:
+`pack/missing-artifact` (a section names a diagram the pack does not declare),
+`pack/duplicate-artifact`, `pack/refines-cycle`, `pack/unknown-node`,
+`pack/trace-id-mismatch`, `pack/render-failed`, `pack/check-failed`,
+`pack/browser-check-failed`. Fix a failing diagram with
 `archify finalize <type> <source>` into a scratch path for its detailed
 receipt.
+
+Warnings never block, because a pack holds only what was asked:
+`pack/dangling-reference` (a link names a diagram that is not in the pack and
+is left out), `pack/undeclared-element`, `pack/orphan-element` and the C4
+warnings above. Act on a C4 warning; leave a dangling reference alone unless
+that diagram was requested.
 
 ### What the reader gets
 

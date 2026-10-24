@@ -24,6 +24,8 @@ const firstSection = artifact.documents[0];
 const known = (ids: string[]) => ids.flatMap((id) => { const item = byId.get(id); return item ? [item] : []; });
 const parents = known(artifact.refines);
 const children = known(artifact.refinedBy);
+const viewOf = known(artifact.viewOf ?? []);
+const views = known(artifact.views ?? []);
 const drilledFrom = known(artifact.drilledFrom);
 const drills = artifact.drillsInto.flatMap((link) => { const target = byOutput.get(link.target); return target ? [{ link, target }] : []; });
 const elements = Object.entries(artifact.elements || {}).flatMap(([node, id]) => { const element = pack.elements.find((item) => item.id === id); return element ? [{ node, element }] : []; });
@@ -64,14 +66,25 @@ const file = artifactFile(pack, artifact);
             <h2 {...t('In documents', '所属文档')}>In documents</h2>
             <ul>{artifact.documents.map((doc) => <li><a href={`${packPage(pack)}#pack-docs`}>{doc.section} · {doc.title}</a></li>)}</ul>
           </section>
-          <section>
-            <h2 {...t('Refines', '细化自')}>Refines</h2>
-            {parents.length ? <ul>{parents.map((item) => <li><a href={artifactPage(pack, item)}>↑ {item.title}</a></li>)}</ul> : <p class="ac-none" {...t('Top of the hierarchy.', '位于层级顶端。')}>Top of the hierarchy.</p>}
-            {children.length > 0 && <>
-              <h2 style="margin-top:.9rem" {...t('Refined by', '被细化为')}>Refined by</h2>
-              <ul>{children.map((item) => <li><a href={artifactPage(pack, item)}>↓ {item.title}</a></li>)}</ul>
-            </>}
-          </section>
+          {viewOf.length > 0 ? (
+            <section>
+              <h2 {...t('A view of', '是下列图的视角')}>A view of</h2>
+              <ul>{viewOf.map((item) => <li><a href={artifactPage(pack, item)}>↔ {item.title}</a></li>)}</ul>
+            </section>
+          ) : (
+            <section>
+              <h2 {...t('Refines', '细化自')}>Refines</h2>
+              {parents.length ? <ul>{parents.map((item) => <li><a href={artifactPage(pack, item)}>↑ {item.title}</a></li>)}</ul> : <p class="ac-none" {...t('Top of the hierarchy.', '位于层级顶端。')}>Top of the hierarchy.</p>}
+              {children.length > 0 && <>
+                <h2 style="margin-top:.9rem" {...t('Refined by', '被细化为')}>Refined by</h2>
+                <ul>{children.map((item) => <li><a href={artifactPage(pack, item)}>↓ {item.title}</a></li>)}</ul>
+              </>}
+              {views.length > 0 && <>
+                <h2 style="margin-top:.9rem" {...t('Alternate views', '其他视角')}>Alternate views</h2>
+                <ul>{views.map((item) => <li><a href={artifactPage(pack, item)}>↔ {item.title}</a></li>)}</ul>
+              </>}
+            </section>
+          )}
           {(drills.length > 0 || drilledFrom.length > 0) && (
             <section>
               <h2 {...t('Drill-down', '下钻')}>Drill-down</h2>

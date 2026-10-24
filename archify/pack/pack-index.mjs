@@ -24,6 +24,7 @@ const UI = {
     element: 'Element', owner: 'Owner', status: 'Status', appearsIn: 'Appears in',
     diagram: 'Diagram', typeLabel: 'Type', levelLabel: 'Level', concernLabel: 'Concern', rolesLabel: 'Roles',
     inDocuments: 'In documents', refines: 'Refines', refinedBy: 'Refined by', top: 'Top of the hierarchy.', drillDown: 'Drill-down', traced: 'Traced elements',
+    views: 'Alternate views', viewOf: 'A view of', viewTag: 'view',
     files: 'Files', openStandalone: 'Open standalone diagram', openSource: 'Authored source',
     showing: 'Showing {n} of {t} diagrams', noMatch: 'No diagrams match these filters.',
     theme: 'Theme', auto: 'Auto', light: 'Light', dark: 'Dark', frame: 'live Archify diagram',
@@ -38,6 +39,7 @@ const UI = {
     element: '元素', owner: '負責方', status: '狀態', appearsIn: '出現於',
     diagram: '圖表', typeLabel: '類型', levelLabel: '層級', concernLabel: '關注點', rolesLabel: '角色',
     inDocuments: '所屬文件', refines: '細化自', refinedBy: '被細化為', top: '位於層級頂端。', drillDown: '下鑽', traced: '追溯元素',
+    views: '其他視角', viewOf: '是下列圖的視角', viewTag: '視角',
     files: '檔案', openStandalone: '獨立開啟圖表', openSource: '原始檔',
     showing: '顯示 {n} / {t} 張圖', noMatch: '沒有符合篩選條件的圖。',
     theme: '主題', auto: '自動', light: '淺色', dark: '深色', frame: 'Archify 互動式圖表',
@@ -52,6 +54,7 @@ const UI = {
     element: '元素', owner: '负责方', status: '状态', appearsIn: '出现于',
     diagram: '图表', typeLabel: '类型', levelLabel: '层级', concernLabel: '关注点', rolesLabel: '角色',
     inDocuments: '所属文档', refines: '细化自', refinedBy: '被细化为', top: '位于层级顶端。', drillDown: '下钻', traced: '追溯元素',
+    views: '其他视角', viewOf: '是下列图的视角', viewTag: '视角',
     files: '文件', openStandalone: '独立打开图表', openSource: '源文件',
     showing: '显示 {n} / {t} 张图', noMatch: '没有符合筛选条件的图。',
     theme: '主题', auto: '自动', light: '浅色', dark: '深色', frame: 'Archify 交互式图表',
@@ -146,13 +149,17 @@ export function packIndexHtml(manifest) {
   }).join('')}</tr>`).join('')}</tbody></table></div>`;
   const others = artifacts.filter((artifact) => !LEVELS.includes(artifact.viewpoint?.level) || !CONCERNS.includes(artifact.viewpoint?.concern));
 
-  const roots = artifacts.filter((artifact) => !artifact.refines.some((id) => byId.has(id)));
+  // Alternate views (a deployment of the containers) hang under their diagram
+  // but are marked, because they sit beside it rather than one level below.
+  const roots = artifacts.filter((artifact) => !artifact.refines.some((id) => byId.has(id)) && !(artifact.viewOf || []).some((id) => byId.has(id)));
   const seen = new Set();
   const branch = (artifact) => {
     if (seen.has(artifact.id)) return '';
     seen.add(artifact.id);
     const children = artifact.refinedBy.map((id) => byId.get(id)).filter(Boolean);
-    return `<li>${link(artifact)}${children.length ? `<ul>${children.map(branch).join('')}</ul>` : ''}</li>`;
+    const views = (artifact.views || []).map((id) => byId.get(id)).filter(Boolean);
+    const items = [...children.map(branch), ...views.filter((view) => !seen.has(view.id)).map((view) => { seen.add(view.id); return `<li class="view-item">${link(view)}<span class="view-tag">${esc(t.viewTag)}</span></li>`; })];
+    return `<li>${link(artifact)}${items.length ? `<ul>${items.join('')}</ul>` : ''}</li>`;
   };
   const hierarchy = `<ul class="tree">${roots.map(branch).join('')}</ul>`;
 
@@ -185,10 +192,12 @@ export function packIndexHtml(manifest) {
     ].filter(Boolean).map(([name, value]) => `<dt>${esc(name)}</dt><dd>${value}</dd>`).join('');
     const parents = refinedLinks(artifact.refines, '↑');
     const children = refinedLinks(artifact.refinedBy, '↓');
+    const viewOf = refinedLinks(artifact.viewOf || [], '↔');
+    const views = refinedLinks(artifact.views || [], '↔');
     return `<section class="view" id="view-${esc(artifact.id)}" data-view="${esc(artifact.id)}" hidden><p class="crumbs"><a href="#overview">${esc(manifest.title)}</a> › ${first ? `<span>${esc(first.document)} · ${esc(first.section)} ${esc(first.title)}</span> › ` : ''}<span>${esc(artifact.title)}</span></p><h1>${esc(artifact.title)}</h1>${artifact.subtitle ? `<p class="lede">${esc(artifact.subtitle)}</p>` : ''}<div class="stage"><div class="frame"><iframe title="${esc(`${artifact.title} — ${t.frame}`)}" data-base="${esc(href(artifact.output))}"></iframe></div><aside class="info">`
       + `<section><h2>${esc(t.diagram)}</h2><dl>${rows}</dl></section>`
       + `<section><h2>${esc(t.inDocuments)}</h2><ul>${artifact.documents.map((entry) => `<li>${esc(entry.section)} · ${esc(entry.title)}</li>`).join('')}</ul></section>`
-      + `<section><h2>${esc(t.refines)}</h2>${parents ? `<ul>${parents}</ul>` : `<p class="none">${esc(t.top)}</p>`}${children ? `<h2 class="sub">${esc(t.refinedBy)}</h2><ul>${children}</ul>` : ''}</section>`
+      + (viewOf ? `<section><h2>${esc(t.viewOf)}</h2><ul>${viewOf}</ul></section>` : `<section><h2>${esc(t.refines)}</h2>${parents ? `<ul>${parents}</ul>` : `<p class="none">${esc(t.top)}</p>`}${children ? `<h2 class="sub">${esc(t.refinedBy)}</h2><ul>${children}</ul>` : ''}${views ? `<h2 class="sub">${esc(t.views)}</h2><ul>${views}</ul>` : ''}</section>`)
       + `${drills.length || drilledFrom.length ? `<section><h2>${esc(t.drillDown)}</h2><ul>${drills.join('')}${drilledFrom.join('')}</ul></section>` : ''}`
       + `${elements.length ? `<section><h2>${esc(t.traced)}</h2><ul>${elements.join('')}</ul></section>` : ''}`
       + `<section><h2>${esc(t.files)}</h2><ul><li><a href="${esc(href(artifact.output))}" target="_blank" rel="noopener">${esc(t.openStandalone)} ↗</a></li><li><code>${esc(artifact.source)}</code></li></ul></section>`
@@ -268,6 +277,7 @@ thead th { background:var(--navy); color:#fff; font-weight:600; }
 .tree ul { margin-left:.6rem; padding-left:1.1rem; border-left:1px solid var(--line); }
 .tree li { padding:.25rem 0; }
 .tree .af { display:inline-flex; font-weight:600; }
+.view-tag { margin-left:.4rem; padding:0 .35rem; border:1px dashed var(--line); border-radius:3px; font-size:.6875rem; color:var(--muted); }
 .trace td:first-child, .trace td:nth-child(3), .trace td:nth-child(4) { white-space:nowrap; }
 .badge { padding:0 .4rem; border:1px solid currentColor; border-radius:3px; font-size:.75rem; }
 .badge.current { color:var(--ok); } .badge.partial { color:var(--warn); } .badge.target { color:var(--accent); border-style:dashed; }

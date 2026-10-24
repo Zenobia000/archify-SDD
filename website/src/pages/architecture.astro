@@ -58,7 +58,7 @@ const facetTitles: Record<string, { 'data-en': string; 'data-zh': string }> = {
     <section class="ac-section alt" id="matrix" aria-labelledby="matrix-title">
       <div class="ac-shell">
         <h2 id="matrix-title" {...t('Viewpoint matrix', '视角矩阵')}>Viewpoint matrix</h2>
-        <p class="ac-intro" {...t('Rows are abstraction levels, columns are what the diagram is about. Each cell is one native Archify diagram type with a fixed purpose.', '行是抽象层级，列是图所关注的主题。每一格对应一种 Archify 原生图表与固定用途。')}>Rows are abstraction levels, columns are what the diagram is about. Each cell is one native Archify diagram type with a fixed purpose.</p>
+        <p class="ac-intro" {...t('Rows are abstraction levels, columns are what the diagram is about. Each cell is one native Archify diagram type with a fixed purpose. It is a menu, not a checklist: draw only the cells you need, and a document pack holds only the cells it was asked for.', '行是抽象层级，列是图所关注的主题。每一格对应一种 Archify 原生图表与固定用途。这是菜单，不是清单：只画你需要的格子，文档包也只放被要求的格子。')}>Rows are abstraction levels, columns are what the diagram is about. Each cell is one native Archify diagram type with a fixed purpose. It is a menu, not a checklist: draw only the cells you need, and a document pack holds only the cells it was asked for.</p>
         <div class="ac-table-wrap">
           <table class="ac-matrix">
             <thead><tr><th scope="col"><span class="sr-only">Level</span></th>{CONCERNS.map((concern) => <th scope="col" {...t(CONCERN_LABELS[concern].en, CONCERN_LABELS[concern].zh)}>{CONCERN_LABELS[concern].en}</th>)}</tr></thead>

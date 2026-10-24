@@ -105,7 +105,7 @@ export function artifactRoutes() {
 
 // Refinement hierarchy: roots refine nothing inside the pack; children are
 // the diagrams that refine them.
-/** @typedef {{ artifact: PackArtifact, children: TreeNode[] }} TreeNode */
+/** @typedef {{ artifact: PackArtifact, children: TreeNode[], views: PackArtifact[] }} TreeNode */
 /** @param {Pack} pack @returns {TreeNode[]} */
 export function refinementTree(pack) {
   const byId = new Map(pack.artifacts.map((artifact) => [artifact.id, artifact]));
@@ -115,9 +115,13 @@ export function refinementTree(pack) {
     if (seen.has(artifact.id)) return null;
     seen.add(artifact.id);
     const children = artifact.refinedBy.flatMap((id) => { const child = byId.get(id); return child ? [child] : []; });
-    return { artifact, children: children.flatMap((child) => { const branch = node(child); return branch ? [branch] : []; }) };
+    // An alternate view (deployment) sits beside its diagram, so it is listed
+    // separately from the diagrams that zoom into it.
+    const views = (artifact.views || []).flatMap((id) => { const view = byId.get(id); return view && !seen.has(view.id) ? [view] : []; });
+    views.forEach((view) => seen.add(view.id));
+    return { artifact, children: children.flatMap((child) => { const branch = node(child); return branch ? [branch] : []; }), views };
   };
-  return pack.artifacts.filter((artifact) => !artifact.refines.some((id) => byId.has(id))).flatMap((artifact) => { const branch = node(artifact); return branch ? [branch] : []; });
+  return pack.artifacts.filter((artifact) => !artifact.refines.some((id) => byId.has(id)) && !(artifact.viewOf || []).some((id) => byId.has(id))).flatMap((artifact) => { const branch = node(artifact); return branch ? [branch] : []; });
 }
 
 /** @type {Record<string, Copy>} */

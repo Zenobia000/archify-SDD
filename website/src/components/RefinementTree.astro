@@ -1,16 +1,23 @@
 ---
 import type { Pack, PackArtifact } from '../data/pack-types';
-type TreeNode = { artifact: PackArtifact; children: TreeNode[] };
+type TreeNode = { artifact: PackArtifact; children: TreeNode[]; views: PackArtifact[]; isView?: boolean };
 import { C4_LABELS, TYPE_LABELS, artifactPage } from '../data/architecture-center.mjs';
 interface Props { pack: Pack; nodes: TreeNode[] }
 const { pack, nodes } = Astro.props;
+// An alternate view sits beside its diagram, not a level below it: list it
+// with the diagrams that zoom in, but mark it.
+const below = (node: TreeNode): TreeNode[] => [
+  ...node.children,
+  ...node.views.map((view) => ({ artifact: view, children: [], views: [], isView: true })),
+];
 ---
 <ul class="ac-tree">
-  {nodes.map(({ artifact, children }) => (
+  {nodes.map((node) => (
     <li>
-      <span class="ac-chip">{TYPE_LABELS[artifact.type].en}{artifact.viewpoint?.c4_level ? ` · ${C4_LABELS[artifact.viewpoint.c4_level]}` : ''}</span>
-      <a href={artifactPage(pack, artifact)}>{artifact.title}</a>
-      {children.length > 0 && <Astro.self pack={pack} nodes={children} />}
+      <span class="ac-chip">{TYPE_LABELS[node.artifact.type].en}{node.artifact.viewpoint?.c4_level ? ` · ${C4_LABELS[node.artifact.viewpoint.c4_level]}` : ''}</span>
+      <a href={artifactPage(pack, node.artifact)}>{node.artifact.title}</a>
+      {node.isView && <span class="ac-view-tag" data-en="view" data-zh="视角">view</span>}
+      {below(node).length > 0 && <Astro.self pack={pack} nodes={below(node)} />}
     </li>
   ))}
 </ul>

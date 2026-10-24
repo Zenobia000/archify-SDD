@@ -391,7 +391,9 @@
         "c4-context"
       ],
       "refinedBy": [
-        "c4-booking-api",
+        "c4-booking-api"
+      ],
+      "views": [
         "deployment"
       ],
       "drillsInto": [
@@ -656,10 +658,11 @@
           "title": "Deployment"
         }
       ],
-      "refines": [
+      "refines": [],
+      "refinedBy": [],
+      "viewOf": [
         "c4-containers"
       ],
-      "refinedBy": [],
       "drillsInto": [],
       "drilledFrom": [],
       "elements": {

@@ -228,6 +228,9 @@ export function formatViewpointList(result) {
     }
     lines.push('');
   }
+  lines.push(zh
+    ? '这是菜单，不是清单：每个视角都是独立的一张图，只画使用者要求的。'
+    : 'This is a menu, not a checklist: each viewpoint is a standalone diagram. Draw only what the user asks for.');
   return lines.join('\n').trimEnd();
 }
 
@@ -241,5 +244,8 @@ export function formatViewpointRecommendation(result) {
     `${zh ? '所属文档' : 'Documents'}: ${entry.documents.join(', ')}`,
     `${zh ? '必须包含' : 'Must include'}: ${entry.include.join('; ')}`,
     `meta.viewpoint: ${JSON.stringify({ ...(entry.level ? { level: entry.level } : {}), concern: entry.concern, ...(entry.c4_level ? { c4_level: entry.c4_level } : {}) })}`,
+    zh
+      ? '范围：只画这一张；上下层级等使用者要求时再加，不需要建立文档包。'
+      : 'Scope: draw this one diagram. Add other levels only when asked; no pack is needed for a single diagram.',
   ].join('\n');
 }

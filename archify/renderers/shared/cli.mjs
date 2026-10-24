@@ -360,6 +360,14 @@ export function validateCrossCollectionContracts(diagramType, diagram) {
   validateTraceReferences(diagramType, diagram);
 }
 
+// The semantic nodes of a diagram as { id, label }, whatever its type calls
+// them (components, participants, states, entities, ...).
+export function semanticNodes(diagramType, diagram) {
+  const collection = SEMANTIC_COLLECTIONS[diagramType];
+  const nodes = collection && Array.isArray(diagram?.[collection]) ? diagram[collection] : [];
+  return nodes.filter((node) => node?.id).map((node) => ({ id: node.id, label: node.label ?? node.title ?? node.name ?? node.id }));
+}
+
 // Drill-down links and stable element IDs attach to semantic nodes, so each
 // referenced node must exist in this diagram. Targets are other artifacts and
 // are resolved by the pack that groups them, not here.
@@ -367,8 +375,7 @@ export function validateTraceReferences(diagramType, diagram) {
   const trace = diagram?.meta?.trace;
   if (!trace) return;
   const collection = SEMANTIC_COLLECTIONS[diagramType];
-  const nodes = collection && Array.isArray(diagram[collection]) ? diagram[collection] : [];
-  const known = new Set(nodes.map((node) => node?.id).filter(Boolean));
+  const known = new Set(semanticNodes(diagramType, diagram).map((node) => node.id));
   const problems = [];
 
   (trace.drills_into || []).forEach((link, index) => {
