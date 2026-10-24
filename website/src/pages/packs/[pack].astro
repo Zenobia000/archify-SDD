@@ -12,7 +12,7 @@ import {
 } from '../../data/architecture-center.mjs';
 
 export function getStaticPaths() { return packRoutes(); }
-interface Props { pack: Pack; lang?: 'en' | 'zh' }
+interface Props { pack: Pack; lang?: 'en' | 'zh' | 'zh-tw' }
 const { pack, lang = 'en' } = Astro.props as Props;
 const t = (en: string, zh: string) => ({ 'data-en': en, 'data-zh': zh });
 const byId = new Map<string, PackArtifact>(pack.artifacts.map((artifact: PackArtifact) => [artifact.id, artifact]));

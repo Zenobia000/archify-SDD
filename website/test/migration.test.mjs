@@ -79,7 +79,11 @@ for (const page of pages) {
       // the baseline body must survive.
       const ids = node => [attr(node, 'id'), ...(node.childNodes || []).flatMap(ids)].filter(Boolean);
       const nextIds = new Set(ids(elements(next, 'body')[0]));
-      for (const id of ids(elements(old, 'body')[0])) assert.ok(nextIds.has(id), `${page}: #${id} must remain`);
+      // The single EN/中文 button became an en / zh / zh-tw switcher whose
+      // options are addressed by data-language-switch rather than one id.
+      const replaced = new Set(['language', 'btn-lang']);
+      for (const id of ids(elements(old, 'body')[0])) if (!replaced.has(id)) assert.ok(nextIds.has(id), `${page}: #${id} must remain`);
+      assert.deepEqual(elements(next, 'a').map(node => attr(node, 'data-language-switch')).filter(Boolean), ['en', 'zh', 'zh-tw'], `${page}: language switcher`);
     }
     assert.ok(!read(dist, page).includes('[[ARCHIFY_VERSION]]'));
   });

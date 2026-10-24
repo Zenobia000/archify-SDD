@@ -87,7 +87,7 @@ test('real Chrome: Architecture Center filters the catalog and diagram pages for
     assert.equal(frame.embed, '1');
     assert.equal(frame.hash, '#focus=booking-api');
     assert.match(frame.crumbs, /Architecture Center › CareSlot design documents › SAD · Containers/);
-    assert.equal(frame.current, 'Architecture Center');
+    assert.equal(frame.current, 'Architecture');
     assert.ok(frame.refinedBy.some(text => /Booking API Components/.test(text)), JSON.stringify(frame.refinedBy));
   } finally {
     await browser?.close();

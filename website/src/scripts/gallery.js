@@ -8,13 +8,10 @@
 
       function applyLanguage(next) {
         language = ArchifySiteLanguage.write(next);
-        document.documentElement.lang = language === 'zh' ? 'zh-Hans' : 'en';
+        document.documentElement.lang = ArchifySiteLanguage.htmlLang();
         document.querySelectorAll('[data-en][data-zh]').forEach(function (node) {
           node.innerHTML = node.getAttribute(language === 'zh' ? 'data-zh' : 'data-en');
         });
-        var languageButton = document.getElementById('language');
-        languageButton.textContent = language === 'zh' ? 'EN' : '中文';
-        languageButton.setAttribute('aria-label', language === 'zh' ? 'Switch to English' : '切换到中文');
       }
 
       function applyFilter(type, updateUrl) {

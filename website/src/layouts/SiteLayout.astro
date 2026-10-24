@@ -7,22 +7,30 @@ import { version, versioned, jsonScript, guide } from '../data/site';
 import { indexCopyFor, guideCopyFor } from '../data/site-translations.mjs';
 import { defaultProofLabels } from '../data/default-proof-labels.mjs';
 import { productChannel } from '../data/product-facts';
-import { canonicalUrl } from '../data/site-urls.mjs';
+import { canonicalUrl, SITE_LANGS, hreflang, htmlLang, ogLocale } from '../data/site-urls.mjs';
+import { toTraditional, toTraditionalDocument } from '../data/to-traditional.mjs';
 import { pageMetadata } from '../data/site-metadata.mjs';
 import { localizeHtml } from '../data/localize-html.mjs';
-interface Props { head: string; css: string; page: string; lang?: 'en' | 'zh' }
+interface Props { head: string; css: string; page: string; lang?: 'en' | 'zh' | 'zh-tw' }
 const { head, css, page, lang = 'en' } = Astro.props;
-const pageDepth = page.split('/').length - 1 + (lang === 'zh' && page !== 'index' ? 1 : 0);
+const pageDepth = page.split('/').length - 1 + (lang !== 'en' && page !== 'index' ? 1 : 0);
 const rootBase = pageDepth ? '../'.repeat(pageDepth) : './';
 const cloudflare = Astro.site?.origin === 'https://archify.si';
 const metadata = pageMetadata(page, lang, version);
 const copy = page === 'index' ? indexCopyFor(productChannel) : page === 'guide' ? guideCopyFor(guide, productChannel) : {};
-const body = localizeHtml(versioned(await Astro.slots.render('default')), { lang, page, cloudflare, copy: JSON.parse(versioned(JSON.stringify(copy))) });
+// Traditional Chinese is converted from the Simplified copy. Document packs
+// carry authored Traditional text, which the converter would rewrite, so those
+// pages convert only the site's own strings (data-zh values), never the page.
+const authoredContent = page === 'architecture' || page.startsWith('packs/');
+const toHant = lang === 'zh-tw' && !authoredContent;
+const rendered = localizeHtml(versioned(await Astro.slots.render('default')), { lang, page, cloudflare, copy: JSON.parse(versioned(JSON.stringify(copy))), convert: lang === 'zh-tw' && authoredContent ? toTraditional : null });
+const body = toHant ? toTraditionalDocument(rendered) : rendered;
+const dataJson = (value: unknown) => (toHant ? toTraditionalDocument(jsonScript(value)) : jsonScript(value));
 // Font loading and the favicon remain page resources; metadata has one source.
 const resourceHead = head.replace(/<meta\b[^>]*>/gi, '').replace(/<title>[\s\S]*?<\/title>/gi, '').replace(/<link\b[^>]*rel=["'](?:canonical|alternate)["'][^>]*>/gi, '');
 ---
 <!DOCTYPE html>
-<html lang={lang === 'zh' ? 'zh-Hans' : 'en'}>
+<html lang={htmlLang(lang)}>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -31,8 +39,7 @@ const resourceHead = head.replace(/<meta\b[^>]*>/gi, '').replace(/<title>[\s\S]*
   <meta name="description" content={metadata.description} />
   <meta name="theme-color" content="#232f3e" />
   <link rel="canonical" href={metadata.canonical} />
-  <link rel="alternate" hreflang="en" href={canonicalUrl(page, 'en')} />
-  <link rel="alternate" hreflang="zh-Hans" href={canonicalUrl(page, 'zh')} />
+  {SITE_LANGS.map(route => <link rel="alternate" hreflang={hreflang(route)} href={canonicalUrl(page, route)} />)}
   <link rel="alternate" hreflang="x-default" href={canonicalUrl(page, 'en')} />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Archify" />
@@ -40,8 +47,8 @@ const resourceHead = head.replace(/<meta\b[^>]*>/gi, '').replace(/<title>[\s\S]*
   <meta property="og:description" content={metadata.description} />
   <meta property="og:url" content={metadata.canonical} />
   <meta property="og:image" content={metadata.image} />
-  <meta property="og:locale" content={lang === 'zh' ? 'zh_CN' : 'en_US'} />
-  <meta property="og:locale:alternate" content={lang === 'zh' ? 'en_US' : 'zh_CN'} />
+  <meta property="og:locale" content={ogLocale(lang)} />
+  {SITE_LANGS.filter(route => route !== lang).map(route => <meta property="og:locale:alternate" content={ogLocale(route)} />)}
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content={metadata.title} />
   <meta name="twitter:description" content={metadata.description} />
@@ -49,8 +56,8 @@ const resourceHead = head.replace(/<meta\b[^>]*>/gi, '').replace(/<title>[\s\S]*
   <script is:inline type="application/ld+json" set:html={jsonScript(metadata.schema)}></script>
   <Fragment set:html={resourceHead} />
   <script is:inline id="site-route" type="application/json" set:html={jsonScript({ page, lang, cloudflare })}></script>
-  <script is:inline id="site-copy" type="application/json" set:html={versioned(jsonScript(copy))}></script>
-  {page === 'index' && <script is:inline id="site-proof-labels" type="application/json" set:html={jsonScript(defaultProofLabels)}></script>}
+  <script is:inline id="site-copy" type="application/json" set:html={versioned(dataJson(copy))}></script>
+  {page === 'index' && <script is:inline id="site-proof-labels" type="application/json" set:html={dataJson(defaultProofLabels)}></script>}
   <script is:inline set:html={languageScript}></script>
   <script is:inline>(function () { var t = 'light'; try { t = localStorage.getItem('archify-site-theme') || 'light'; } catch (_) {} document.documentElement.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light'); })();</script>
   <style is:inline set:html={siteCss + css + referenceCss}></style>

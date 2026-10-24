@@ -11,7 +11,7 @@ import {
 } from '../../../data/architecture-center.mjs';
 
 export function getStaticPaths() { return artifactRoutes(); }
-interface Props { pack: Pack; artifact: PackArtifact; lang?: 'en' | 'zh' }
+interface Props { pack: Pack; artifact: PackArtifact; lang?: 'en' | 'zh' | 'zh-tw' }
 const { pack, artifact, lang = 'en' } = Astro.props as Props;
 const t = (en: string, zh: string) => ({ 'data-en': en, 'data-zh': zh });
 const byId = new Map<string, PackArtifact>(pack.artifacts.map((item: PackArtifact) => [item.id, item]));

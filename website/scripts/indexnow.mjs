@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import { pathToFileURL } from 'node:url';
-import { canonicalOrigin, canonicalUrl, sitePages } from '../src/data/site-urls.mjs';
+import { canonicalOrigin, canonicalUrl, sitePages, SITE_LANGS } from '../src/data/site-urls.mjs';
 import { CASES } from '../src/data/gallery-presentation.mjs';
 import { PUBLISHED_CASES } from '../src/data/published-cases.mjs';
 
@@ -9,7 +9,7 @@ export const keyLocation = `${canonicalOrigin}/${key}.txt`;
 export const sitemapLocation = `${canonicalOrigin}/sitemap.xml`;
 export const endpoint = 'https://api.indexnow.org/indexnow';
 const allowedUrls = new Set([
-  ...sitePages.flatMap(page => ['en', 'zh'].map(lang => canonicalUrl(page, lang))),
+  ...sitePages.flatMap(page => SITE_LANGS.map(lang => canonicalUrl(page, lang))),
   ...CASES.map(entry => `${canonicalOrigin}/gallery/artifacts/${entry.output.replace(/\.html$/, '')}`),
   ...PUBLISHED_CASES.map(entry => `${canonicalOrigin}/${entry.artifact.replace(/\.html$/, '')}`),
 ]);

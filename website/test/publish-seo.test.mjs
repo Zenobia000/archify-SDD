@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { parse, parseFragment } from 'parse5';
 import { CASES } from '../src/data/gallery-presentation.mjs';
 import { PUBLISHED_CASES } from '../src/data/published-cases.mjs';
-import { canonicalPath, canonicalUrl, sitePages } from '../src/data/site-urls.mjs';
+import { canonicalPath, canonicalUrl, sitePages, SITE_LANGS } from '../src/data/site-urls.mjs';
 import { publishSeo, selectedArtifacts, caseMetadata, SEO_BLOCK_START, SEO_BLOCK_END, stripPublishedArtifactMetadata } from '../scripts/publish-seo.mjs';
 
 const docs = fileURLToPath(new URL('../../docs/', import.meta.url));
@@ -15,7 +15,7 @@ function fixture() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-search-'));
   fs.cpSync(path.join(docs, 'gallery'), path.join(root, 'gallery'), { recursive: true });
   fs.cpSync(path.join(docs, 'cases'), path.join(root, 'cases'), { recursive: true });
-  for (const page of sitePages) for (const lang of ['en', 'zh']) {
+  for (const page of sitePages) for (const lang of SITE_LANGS) {
     const route = canonicalPath(page, lang).slice(1);
     const file = !route || route.endsWith('/') ? `${route}index.html` : `${route}.html`;
     fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
@@ -28,10 +28,10 @@ for (const name of ['cloudflare', 'github']) test(`${name}: published discovery 
   const root = fixture();
   try {
     const urls = publishSeo(root, { name });
-    assert.equal(urls.length, sitePages.length * 2 + CASES.length + PUBLISHED_CASES.length);
-    assert.equal(urls.length, sitePages.length * 2 + CASES.length + PUBLISHED_CASES.length, 'localized pages, gallery artifacts and standalone cases');
+    assert.equal(urls.length, sitePages.length * SITE_LANGS.length + CASES.length + PUBLISHED_CASES.length);
+    assert.equal(urls.length, sitePages.length * SITE_LANGS.length + CASES.length + PUBLISHED_CASES.length, 'localized pages, gallery artifacts and standalone cases');
     assert.equal(new Set(urls).size, urls.length);
-    for (const page of sitePages) for (const lang of ['en', 'zh']) assert.ok(urls.includes(canonicalUrl(page, lang)));
+    for (const page of sitePages) for (const lang of SITE_LANGS) assert.ok(urls.includes(canonicalUrl(page, lang)));
     const sitemap = fs.readFileSync(path.join(root, 'sitemap.xml'), 'utf8');
     assert.doesNotMatch(sitemap, /lastmod|priority|changefreq|\.json|\.html|tt-a1i\.github/);
     assert.equal((sitemap.match(/<loc>/g) || []).length, urls.length);

@@ -1,4 +1,4 @@
-import { sitePages } from '../src/data/site-urls.mjs';
+import { sitePages, SITE_LANGS, outputFile } from '../src/data/site-urls.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -14,9 +14,10 @@ const origin = cloudflare ? 'https://archify.si/' : 'https://tt-a1i.github.io/ar
 const extension = cloudflare ? '' : '.html';
 
 test('all built pages expose one shared top navigation and the correct current page', () => {
-  for (const lang of ['en', 'zh']) for (const page of pages) {
-    const file = page === 'index' ? (lang === 'zh' ? 'zh.html' : 'index.html') : `${lang === 'zh' ? 'zh/' : ''}${page}.html`;
-    const hrefFor = target => `${origin}${lang === 'zh' ? 'zh/' : ''}${target}${extension}`;
+  for (const lang of SITE_LANGS) for (const page of pages) {
+    const file = outputFile(page, lang);
+    const prefix = lang === 'en' ? '' : `${lang}/`;
+    const hrefFor = target => `${origin}${prefix}${target}${extension}`;
     const dom = parse(fs.readFileSync(new URL(file, output), 'utf8'));
     const bases = nodes(dom).filter(node => node.tagName === 'base');
     assert.equal(bases.length, 1, file);
@@ -36,7 +37,7 @@ test('all built pages expose one shared top navigation and the correct current p
       assert.equal(attr(community, 'data-i18n'), page === 'index' ? 'nav-community' : 'navCommunity', page);
     } else {
       assert.equal(attr(community, 'data-en'), 'Community', page);
-      assert.equal(attr(community, 'data-zh'), '社区包', page);
+      assert.equal(attr(community, 'data-zh'), lang === 'zh-tw' ? '社群包' : '社区包', page);
     }
     if (page === 'index') {
       const install = nodes(nav).find(node => hasClass(node, 'nav-cta'));
@@ -60,15 +61,16 @@ test('the homepage retains its footer catalog link alongside the top entry', () 
 
 
 test('both localized homepages link to the existing architecture source case', () => {
-  for (const lang of ['en', 'zh']) {
-    const file = lang === 'zh' ? 'zh.html' : 'index.html';
+  for (const lang of SITE_LANGS) {
+    const file = outputFile('index', lang);
+    const prefix = lang === 'en' ? '' : `${lang}/`;
     const dom = parse(fs.readFileSync(new URL(file, output), 'utf8'));
     const baseUri = new URL(attr(nodes(dom).find(node => node.tagName === 'base'), 'href'), new URL(file, origin));
-    const expected = `${origin}${lang === 'zh' ? 'zh/' : ''}cases/mco-runtime${extension}`;
+    const expected = `${origin}${prefix}cases/mco-runtime${extension}`;
     const link = nodes(dom).find(node => node.tagName === 'a' && hasClass(node, 'type-more') &&
       new URL(attr(node, 'href'), baseUri).href === expected);
     assert.ok(link, `${lang}: architecture panel offers the localized source case`);
     assert.ok(nodes(link).some(node => node.nodeName === '#text' && node.value.trim()), 'case entry has readable link text');
-    assert.ok(fs.existsSync(new URL(`${lang === 'zh' ? 'zh/' : ''}cases/mco-runtime.html`, output)), 'case destination is built');
+    assert.ok(fs.existsSync(new URL(outputFile('cases/mco-runtime', lang), output)), 'case destination is built');
   }
 });

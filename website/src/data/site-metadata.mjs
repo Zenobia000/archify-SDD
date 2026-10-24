@@ -1,5 +1,6 @@
-import { canonicalUrl, canonicalOrigin } from './site-urls.mjs';
+import { canonicalUrl, canonicalOrigin, hreflang } from './site-urls.mjs';
 import { PACKS } from './pack-registry.mjs';
+import { toTraditional } from './to-traditional.mjs';
 const descriptions = {
   'cases/mco-runtime': {
     en: ['Archify MCO Runtime Case — Source-backed Architecture', 'Follow pinned MCO source to distinguish provider-output decoding, streamed answer writes and retained artifacts. Read the existing Archify diagram with explicit evidence limits.'],
@@ -40,23 +41,28 @@ for (const pack of PACKS) {
   descriptions[`packs/${pack.id}`] = {
     en: [`Archify — ${pack.title}`, `${summary} Browse its documents, viewpoint matrix, refinement hierarchy and traceability.`],
     zh: [`Archify — ${pack.title}`, `${summary} 浏览它的文档、视角矩阵、细化层级与追溯矩阵。`],
+    // Pack titles are authored text and stay as written; only the template is converted.
+    'zh-tw': [`Archify — ${pack.title}`, `${summary} ${toTraditional('浏览它的文档、视角矩阵、细化层级与追溯矩阵。')}`],
   };
   for (const artifact of pack.artifacts) {
     const where = artifact.documents.map((entry) => entry.section).join(', ');
     descriptions[`packs/${pack.id}/${artifact.id}`] = {
       en: [`Archify — ${artifact.title} · ${pack.title}`, `${artifact.title}${where ? ` (${where})` : ''} from the ${pack.title} reference pack, with the diagrams it refines and drills into.`],
       zh: [`Archify — ${artifact.title} · ${pack.title}`, `${pack.title} 参考文档包中的「${artifact.title}」${where ? `（${where}）` : ''}，以及它所细化与下钻的图。`],
+      'zh-tw': [`Archify — ${artifact.title} · ${pack.title}`, `${pack.title} ${toTraditional('参考文档包中的')}「${artifact.title}」${where ? `（${where}）` : ''}${toTraditional('，以及它所细化与下钻的图。')}`],
     };
   }
 }
+// Pages without an authored zh-tw entry derive it from the Simplified copy.
+const copyFor = (page, lang) => descriptions[page][lang] || descriptions[page].zh.map(toTraditional);
 export function pageMetadata(page, lang, version) {
-  const [title, description] = descriptions[page][lang];
+  const [title, description] = copyFor(page, lang);
   const canonical = canonicalUrl(page, lang);
   return { title, description, canonical, image: `${canonicalOrigin}/assets/archify-social-preview.png`,
     schema: { '@context': 'https://schema.org', '@graph': [
-      { '@type': 'WebSite', '@id': `${canonicalOrigin}/#website`, url: `${canonicalOrigin}/`, name: 'Archify', inLanguage: ['en', 'zh-Hans'] },
-      { '@type': 'SoftwareSourceCode', '@id': `${canonicalOrigin}/#source`, name: 'Archify', codeRepository: 'https://github.com/tt-a1i/archify', url: 'https://github.com/tt-a1i/archify', license: 'https://github.com/tt-a1i/archify/blob/main/LICENSE', version, programmingLanguage: 'JavaScript', description: descriptions.index[lang][1] },
-      ...(['agent-diagrams', 'cases/mco-runtime'].includes(page) ? [{ '@type': 'TechArticle', '@id': `${canonical}#article`, url: canonical, headline: title, description, inLanguage: lang === 'zh' ? 'zh-Hans' : 'en', isPartOf: { '@id': `${canonicalOrigin}/#website` }, about: { '@id': `${canonicalOrigin}/#source` } }] : []),
+      { '@type': 'WebSite', '@id': `${canonicalOrigin}/#website`, url: `${canonicalOrigin}/`, name: 'Archify', inLanguage: ['en', 'zh-Hans', 'zh-Hant'] },
+      { '@type': 'SoftwareSourceCode', '@id': `${canonicalOrigin}/#source`, name: 'Archify', codeRepository: 'https://github.com/tt-a1i/archify', url: 'https://github.com/tt-a1i/archify', license: 'https://github.com/tt-a1i/archify/blob/main/LICENSE', version, programmingLanguage: 'JavaScript', description: copyFor('index', lang)[1] },
+      ...(['agent-diagrams', 'cases/mco-runtime'].includes(page) ? [{ '@type': 'TechArticle', '@id': `${canonical}#article`, url: canonical, headline: title, description, inLanguage: hreflang(lang), isPartOf: { '@id': `${canonicalOrigin}/#website` }, about: { '@id': `${canonicalOrigin}/#source` } }] : []),
     ] },
   };
 }

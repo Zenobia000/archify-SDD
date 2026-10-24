@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
-import { canonicalOrigin, canonicalUrl, canonicalPath, sitePages } from '../src/data/site-urls.mjs';
+import { canonicalOrigin, canonicalUrl, canonicalPath, sitePages, SITE_LANGS } from '../src/data/site-urls.mjs';
 import { CASES } from '../src/data/gallery-presentation.mjs';
 import { PUBLISHED_CASES } from '../src/data/published-cases.mjs';
 
@@ -56,7 +56,7 @@ export function selectedArtifacts(root) {
 }
 
 export function publishSeo(root, target) {
-  const paths = sitePages.flatMap(page => ['en', 'zh'].map(lang => canonicalPath(page, lang).slice(1)));
+  const paths = sitePages.flatMap(page => SITE_LANGS.map(lang => canonicalPath(page, lang).slice(1)));
   for (const route of paths) {
     const file = route === '' || route.endsWith('/') ? `${route}index.html` : `${route}.html`;
     assert.ok(fs.existsSync(path.join(root, file)), `Missing indexable page: ${file}`);
@@ -82,7 +82,7 @@ export function publishSeo(root, target) {
     fs.writeFileSync(file, original.replace(/<\/head>/i, closingTag => `${metadata}${closingTag}`));
   }
   const urls = [
-    ...sitePages.flatMap(page => ['en', 'zh'].map(lang => canonicalUrl(page, lang))),
+    ...sitePages.flatMap(page => SITE_LANGS.map(lang => canonicalUrl(page, lang))),
     ...selected.map(({ entry }) => `${CANONICAL_ORIGIN}/${entry.artifact.replace(/\.html$/, '')}`),
     ...PUBLISHED_CASES.map(entry => `${CANONICAL_ORIGIN}/${entry.artifact.replace(/\.html$/, '')}`),
   ];

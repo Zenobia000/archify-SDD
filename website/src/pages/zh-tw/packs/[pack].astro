@@ -1,0 +1,6 @@
+---
+import Page from "../../packs/[pack].astro";
+import { packRoutes } from "../../../data/architecture-center.mjs";
+export function getStaticPaths() { return packRoutes(); }
+---
+<Page {...Astro.props} lang="zh-tw" />

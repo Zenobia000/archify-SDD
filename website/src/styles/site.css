@@ -105,8 +105,11 @@
     .site-nav .btn-theme:hover { color:var(--text); border-color:var(--line-strong); }
     .site-nav .btn-theme .theme-sun, :root[data-theme="dark"] .site-nav .btn-theme .theme-moon { display:none; }
     :root[data-theme="dark"] .site-nav .btn-theme .theme-sun { display:block; }
-    .site-nav .btn-lang { min-width:40px; height:36px; min-height:36px; padding:0 .7rem; display:inline-flex; align-items:center; justify-content:center; gap:0; flex:none; border:1px solid var(--line-hi); border-radius:10px; background:transparent; box-shadow:none; color:rgba(var(--fg-rgb),.8); font-family:var(--font-body); font-size:.75rem; font-weight:500; letter-spacing:0; line-height:1; text-transform:none; cursor:pointer; transform:none; transition:color .18s var(--ease-out),border-color .18s var(--ease-out); }
-    .site-nav .btn-lang:hover { color:var(--text); border-color:var(--line-strong); background:transparent; transform:none; }
+    .site-nav .lang-switch { height:36px; display:inline-flex; flex:none; overflow:hidden; border:1px solid var(--line-hi); border-radius:10px; }
+    .site-nav .lang-option { min-width:36px; padding:0 .6rem; display:inline-flex; align-items:center; justify-content:center; color:rgba(var(--fg-rgb),.8); font-family:var(--font-body); font-size:.8125rem; font-weight:500; line-height:1; text-decoration:none; transition:color .18s var(--ease-out),background .18s var(--ease-out); }
+    .site-nav .lang-option + .lang-option { border-left:1px solid var(--line-hi); }
+    .site-nav .lang-option:hover { color:var(--text); background:rgba(var(--fg-rgb),.06); }
+    .site-nav .lang-option[aria-current="true"] { color:var(--text); background:rgba(var(--fg-rgb),.12); font-weight:600; }
     .site-nav .nav-cta { height:36px; min-height:36px; padding:0 1rem; display:inline-flex; align-items:center; justify-content:center; gap:0; flex:none; border:1px solid var(--text); border-radius:10px; background:var(--text); box-shadow:none; color:var(--btn-fg); font-family:var(--font-body); font-size:.8125rem; font-weight:600; letter-spacing:-.005em; line-height:1; text-decoration:none; white-space:nowrap; transform:none; transition:background .2s var(--ease-out),border-color .2s var(--ease-out),color .2s var(--ease-out); }
     .site-nav .nav-cta:hover { background:var(--accent); border-color:var(--accent); color:var(--on-accent); transform:none; box-shadow:0 8px 28px -6px rgba(var(--accent-rgb),.6); }
 
@@ -124,10 +127,19 @@
       .site-nav .nav-logo-path { display:none; }
       .site-nav .brand-lockup { width:30px; object-fit:cover; object-position:left center; }
       .site-nav .nav-link { padding:0 .3rem; font-size:.75rem; gap:.3rem; }
+      /* The repository link also lives in the footer; the row has no room for it here. */
+      .site-nav .nav-links a[href^="https://github.com"] { display:none; }
+      .site-nav .nav-right { gap:.35rem; }
+      .site-nav .btn-theme { width:32px; }
+      .site-nav .lang-option { min-width:28px; padding:0 .3rem; font-size:.75rem; }
+      .site-nav .nav-cta { padding:0 .65rem; font-size:.75rem; }
     }
     @media (max-width:360px) {
       .site-nav { padding:0 .5rem; }
-      .site-nav .nav-link { min-width:44px; padding:0 .2rem; }
+      .site-nav .nav-link { min-width:38px; padding:0 .15rem; font-size:.6875rem; }
+      .site-nav .btn-theme { width:30px; }
+      .site-nav .lang-option { min-width:26px; padding:0 .25rem; }
+      .site-nav .nav-cta { padding:0 .5rem; }
     }
     /* inner-page entrance — label, title, copy and side board arrive in sequence */
     @keyframes siteRise { from { opacity:0; translate:0 18px; filter:blur(6px); } }

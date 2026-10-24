@@ -100,7 +100,7 @@ const { lang = 'en' } = Astro.props;
       <span data-en={`Archify v${version} · ${productChannel} · self-contained HTML · typed JSON source`} data-zh={`Archify v${version} · ${productChannel === 'development' ? '开发版' : '稳定版'} · 独立 HTML · 类型化 JSON 源`}>Archify v{version} · {productChannel} · self-contained HTML · typed JSON source</span>
       <a href="https://github.com/tt-a1i/archify" data-en="View source on GitHub ↗" data-zh="在 GitHub 查看源码 ↗">View source on GitHub ↗</a>
     </footer>
-    <aside class="agent-guide-link" aria-label={lang === 'zh' ? 'Agent 画图指南' : 'Agent diagramming guide'}>
+    <aside class="agent-guide-link" aria-label={lang !== 'en' ? 'Agent 画图指南' : 'Agent diagramming guide'}>
       <a href="agent-diagrams.html" data-en="From prompt to a diagram you can trust →" data-zh="从提示词到可检查的图 →">From prompt to a diagram you can trust →</a>
       <p data-en="Learn how to author, review and share diagrams with your coding agent." data-zh="了解如何用 Coding Agent 编写、检查和分享图表。">Learn how to author, review and share diagrams with your coding agent.</p>
     </aside>

@@ -1,4 +1,4 @@
-import { sitePages } from '../src/data/site-urls.mjs';
+import { sitePages, SITE_LANGS, outputFile } from '../src/data/site-urls.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -75,8 +75,8 @@ if (process.env.ARCHIFY_FONT_BUILD_CHECK === '1') test('built font links resolve
   const cloudflare = process.env.ARCHIFY_SITE_TARGET === 'cloudflare';
   const output = new URL(cloudflare ? '../dist-cloudflare/' : '../dist/', import.meta.url);
   const root = cloudflare ? 'https://archify.si/' : 'https://tt-a1i.github.io/archify/';
-  for (const lang of ['en', 'zh']) for (const page of pages) {
-    const file = page === 'index' ? `${lang === 'zh' ? 'zh' : 'index'}.html` : `${lang === 'zh' ? 'zh/' : ''}${page}.html`;
+  for (const lang of SITE_LANGS) for (const page of pages) {
+    const file = outputFile(page, lang);
     const html = fs.readFileSync(new URL(file, output), 'utf8');
     assert.doesNotMatch(html, /fonts\.googleapis\.com|fonts\.gstatic\.com/);
     const all = nodes(parse(html));

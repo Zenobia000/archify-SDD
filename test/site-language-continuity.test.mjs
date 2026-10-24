@@ -423,8 +423,9 @@ test('real Chrome preserves language through entry, navigation, selection, refre
   // Expectations are independent of the production URL helper.
   const pageHref = (page, language = 'en') => {
     if (!builtSite) return page;
-    if (page === 'index.html') return language === 'zh' ? (cloudflare ? 'zh' : 'zh.html') : './';
-    return (language === 'zh' ? 'zh/' : '') + (cloudflare ? page.replace(/\.html$/, '') : page);
+    const prefix = language === 'en' ? '' : language;
+    if (page === 'index.html') return prefix ? (cloudflare ? prefix : `${prefix}.html`) : './';
+    return (prefix ? `${prefix}/` : '') + (cloudflare ? page.replace(/\.html$/, '') : page);
   };
   const pageUrl = (page, language = 'en', suffix = '') => new URL(pageHref(page, language) + suffix, `${baseUrl}/`).href;
   const navSelector = (page, language) => `.site-nav a[href="${pageHref(page, language)}"]`;
@@ -444,17 +445,26 @@ test('real Chrome preserves language through entry, navigation, selection, refre
     if (page !== 'start.html') {
       assert.ok(receipt.emphasis.length > 0, `${page}: heading emphasis exists`);
       for (const emphasis of receipt.emphasis) {
-        assert.equal(emphasis.style, language === 'zh' ? 'normal' : 'italic', `${page} ${language}: localized heading emphasis style`);
-        assert.equal(emphasis.weight, language === 'zh' ? '600' : '400', `${page} ${language}: localized heading emphasis weight`);
-        if (language === 'zh') {
-          assert.equal(emphasis.family, emphasis.headingFamily, `${page}: Chinese emphasis inherits its heading family`);
-          assert.match(emphasis.family, /(?:^|,)\s*sans-serif\s*$/, `${page}: Chinese heading uses the portable sans-serif stack`);
+        if (builtSite) {
+          // The reference layout emphasises with colour in the heading's own face,
+          // in every language: no italic serif and no separate family to fall back from.
+          assert.equal(emphasis.style, 'normal', `${page} ${language}: heading emphasis is upright`);
+          assert.equal(emphasis.family, emphasis.headingFamily, `${page} ${language}: emphasis inherits its heading family`);
+          assert.match(emphasis.family, /(?:^|,)\s*sans-serif\s*$/, `${page} ${language}: heading uses the portable sans-serif stack`);
+        } else {
+          // The legacy docs pages keep their italic serif emphasis for English.
+          assert.equal(emphasis.style, language === 'zh' ? 'normal' : 'italic', `${page} ${language}: localized heading emphasis style`);
+          assert.equal(emphasis.weight, language === 'zh' ? '600' : '400', `${page} ${language}: localized heading emphasis weight`);
+          if (language === 'zh') {
+            assert.equal(emphasis.family, emphasis.headingFamily, `${page}: Chinese emphasis inherits its heading family`);
+            assert.match(emphasis.family, /(?:^|,)\s*sans-serif\s*$/, `${page}: Chinese heading uses the portable sans-serif stack`);
+          }
         }
       }
     }
-    assert.equal(receipt.base, language === 'zh' && page !== 'index.html' ? '../' : './', `${page}: relative export base`);
+    assert.equal(receipt.base, language !== 'en' && page !== 'index.html' ? '../' : './', `${page}: relative export base`);
     assert.equal(receipt.resolvedBase, rootUrl, `${page}: resolved resource base`);
-    assert.deepEqual(receipt.links, ['guide.html', 'gallery.html', 'start.html', 'community.html'].map(target => ({
+    assert.deepEqual(receipt.links, (builtSite ? ['architecture.html', 'guide.html', 'gallery.html', 'start.html', 'community.html'] : ['guide.html', 'gallery.html', 'start.html', 'community.html']).map(target => ({
       raw: pageHref(target, language), resolved: new URL(pageHref(target, language), rootUrl).href,
     })), `${page} ${language}: exact resolved navigation routes`);
     assert.equal(receipt.logo, new URL(pageHref('index.html', language) + (page === 'index.html' ? '#' : ''), rootUrl).href, `${page}: localized home link`);
@@ -612,14 +622,18 @@ test('real Chrome preserves language through entry, navigation, selection, refre
 
     if (builtSite) {
       await evaluate(browser, sessionId, "history.replaceState(null, '', location.pathname + '?type=architecture&utm_source=switch#proof')");
-      assert.equal(await evaluate(browser, sessionId, 'document.querySelector("[data-language-switch]").tagName'), 'A');
-      await clickAndNavigate(browser, sessionId, '[data-language-switch]');
+      assert.deepEqual(await evaluate(browser, sessionId, '[...document.querySelectorAll("[data-language-switch]")].map(node => node.tagName + ":" + node.dataset.languageSwitch)'), ['A:en', 'A:zh', 'A:zh-tw']);
+      await clickAndNavigate(browser, sessionId, '[data-language-switch="en"]');
       assert.equal(await evaluate(browser, sessionId, 'location.href'), pageUrl('gallery.html', 'en', '?type=architecture&utm_source=switch#proof'));
       assert.equal(await evaluate(browser, sessionId, `document.querySelector('[data-filter="architecture"]').getAttribute('aria-pressed')`), 'true');
-      await clickAndNavigate(browser, sessionId, '[data-language-switch]');
+      await clickAndNavigate(browser, sessionId, '[data-language-switch="zh"]');
       assert.equal(await evaluate(browser, sessionId, 'location.href'), pageUrl('gallery.html', 'zh', '?type=architecture&utm_source=switch#proof'));
       assert.equal(await evaluate(browser, sessionId, 'document.documentElement.lang'), chineseLang);
-      await clickAndNavigate(browser, sessionId, '[data-language-switch]');
+      await clickAndNavigate(browser, sessionId, '[data-language-switch="zh-tw"]');
+      assert.equal(await evaluate(browser, sessionId, 'location.href'), pageUrl('gallery.html', 'zh-tw', '?type=architecture&utm_source=switch#proof'));
+      assert.equal(await evaluate(browser, sessionId, 'document.documentElement.lang'), 'zh-Hant');
+      assert.equal(await evaluate(browser, sessionId, `document.querySelector('[data-filter="architecture"]').getAttribute('aria-pressed')`), 'true', 'filter survives the Traditional route');
+      await clickAndNavigate(browser, sessionId, '[data-language-switch="en"]');
       assert.equal(await evaluate(browser, sessionId, 'location.href'), pageUrl('gallery.html', 'en', '?type=architecture&utm_source=switch#proof'));
     } else {
       await evaluate(browser, sessionId, 'document.getElementById("language").click()');
@@ -687,7 +701,7 @@ test('real Chrome preserves language through entry, navigation, selection, refre
         return card.dataset.recipe;
       })()`), selectedRecipe.id, 'first workflow card matches the canonical recipe inventory');
       for (const language of ['zh', 'en']) {
-        await clickAndNavigate(browser, sessionId, '[data-language-switch]');
+        await clickAndNavigate(browser, sessionId, `[data-language-switch="${language}"]`);
         assert.equal(await evaluate(browser, sessionId, 'location.href'), pageUrl('guide.html', language, suffix));
         assert.deepEqual(await evaluate(browser, sessionId, `({
           language: document.documentElement.lang,
@@ -730,7 +744,7 @@ test('real Chrome preserves language through entry, navigation, selection, refre
         var nav = document.querySelector('.site-nav');
         var logo = nav.querySelector('.nav-logo-text');
         var actions = nav.querySelector('.nav-right');
-        var language = nav.querySelector('.btn-lang');
+        var language = nav.querySelector(${JSON.stringify(builtSite ? '.lang-switch' : '.btn-lang')});
         var cta = nav.querySelector('.nav-cta');
         var navStyle = getComputedStyle(nav);
         var logoStyle = getComputedStyle(logo);
@@ -755,7 +769,7 @@ test('real Chrome preserves language through entry, navigation, selection, refre
         };
       })()`));
     }
-    assert.equal(desktopReceipts[0].linkCount, 5);
+    assert.equal(desktopReceipts[0].linkCount, builtSite ? 6 : 5);
     assert.equal(desktopReceipts[0].communityLabel, '社区包');
     for (const receipt of desktopReceipts.slice(1)) assert.deepEqual(receipt, desktopReceipts[0]);
 

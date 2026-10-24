@@ -76,10 +76,14 @@ test('community catalog: navigation, language toggle and disclaimer are present'
   const baseUri = new URL(attr(bases[0], 'href'), 'https://tt-a1i.github.io/archify/community.html');
   const links = elements(dom, 'a').map(node => new URL(attr(node, 'href'), baseUri).pathname);
   assert.ok(links.includes('/archify/community.html'), 'primary navigation must link to the catalog under the Pages base');
-  const languageButton = elements(dom, 'a').find((node) => attr(node, 'id') === 'language');
-  assert.ok(languageButton, 'language route link must be present');
-  assert.equal(new URL(attr(languageButton, 'href'), baseUri).href, 'https://tt-a1i.github.io/archify/zh/community.html');
-  assert.equal(attr(languageButton, 'hreflang'), 'zh-Hans');
+  const switches = elements(dom, 'a').filter((node) => attr(node, 'data-language-switch') !== undefined);
+  assert.deepEqual(switches.map((node) => new URL(attr(node, 'href'), baseUri).href), [
+    'https://tt-a1i.github.io/archify/community.html',
+    'https://tt-a1i.github.io/archify/zh/community.html',
+    'https://tt-a1i.github.io/archify/zh-tw/community.html',
+  ], 'English, Simplified and Traditional route links must be present');
+  assert.deepEqual(switches.map((node) => attr(node, 'hreflang')), ['en', 'zh-Hans', 'zh-Hant']);
+  assert.deepEqual(switches.map((node) => attr(node, 'aria-current')), ['true', undefined, undefined]);
   const html = fs.readFileSync(path.join(dist, 'community.html'), 'utf8');
   assert.match(html, /Listing is not endorsement/, 'must carry the no-endorsement disclaimer');
   const submission = elements(dom, 'a').find((node) => (attr(node, 'href') || '').includes('github.com/tt-a1i/archify/tree/main/community'));

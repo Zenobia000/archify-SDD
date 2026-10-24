@@ -150,8 +150,8 @@ test('real Chrome: MCO case stays readable and navigable in both languages, them
       await settled();
       assert.equal(await evaluate('location.hash'), '#case-file-writes');
       const tocPosition = await assertSectionVisible();
-      await loadedAction(() => evaluate(`document.querySelector('[data-language-switch]').click()`));
       const other = lang === 'en' ? 'zh' : 'en';
+      await loadedAction(() => evaluate(`document.querySelector('[data-language-switch="${other}"]').click()`));
       assert.equal(await evaluate('location.pathname'), new URL(urlFor('cases/mco-runtime', other)).pathname);
       assert.equal(await evaluate('document.documentElement.lang'), other === 'zh' ? 'zh-Hans' : 'en');
       assert.equal(await evaluate('location.hash'), '#case-file-writes');

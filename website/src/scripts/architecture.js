@@ -7,7 +7,9 @@
   var cards = Array.prototype.slice.call(document.querySelectorAll('.result-card'));
   var status = document.querySelector('[data-catalog-status]');
   var empty = document.querySelector('[data-catalog-empty]');
-  var zh = document.documentElement.lang.indexOf('zh') === 0;
+  var lang = document.documentElement.lang;
+  var zh = lang.indexOf('zh') === 0;
+  var hant = /^zh-(Hant|TW)/i.test(lang);
   if (!boxes.length || !cards.length) return;
 
   function selected() {
@@ -30,7 +32,7 @@
       card.hidden = !match;
       if (match) visible += 1;
     });
-    status.textContent = zh ? '显示 ' + visible + ' / ' + cards.length + ' 张图' : visible + ' of ' + cards.length + ' diagrams';
+    status.textContent = hant ? '顯示 ' + visible + ' / ' + cards.length + ' 張圖' : zh ? '显示 ' + visible + ' / ' + cards.length + ' 张图' : visible + ' of ' + cards.length + ' diagrams';
     empty.hidden = visible !== 0;
   }
 

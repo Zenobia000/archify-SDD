@@ -28,7 +28,7 @@
         try {
           var scenario = document.getElementById('scenario').value;
           if (scenario.length > 65536) return;
-          var destination = new URL(document.getElementById('language').href);
+          var destination = new URL(event.currentTarget.href);
           var current = new URL(window.location.href);
           current.searchParams.delete('lang');
           destination.search = current.search;
@@ -98,9 +98,7 @@
       }
       function applyLanguage(next) {
         language = ArchifySiteLanguage.write(next);
-        document.documentElement.lang = language === 'zh' ? 'zh-Hans' : 'en';
-        document.getElementById('language').textContent = language === 'zh' ? 'EN' : '中文';
-        document.getElementById('language').setAttribute('aria-label', language === 'zh' ? 'Switch to English' : '切换到中文');
+        document.documentElement.lang = ArchifySiteLanguage.htmlLang();
         document.querySelectorAll('[data-en][data-zh]').forEach(function (node) { node.textContent=node.getAttribute(language === 'zh' ? 'data-zh' : 'data-en'); });
         document.querySelectorAll('[data-i18n]').forEach(function (node) { node.textContent=t(node.dataset.i18n); });
         document.querySelectorAll('[data-i18n-html]').forEach(function (node) { node.innerHTML=t(node.dataset.i18nHtml); });
@@ -132,7 +130,7 @@
         renderResult(recipes.find(function (item) { return item.id === alt.dataset.alt; }),'selected',[]);
         if (restoreFocus) document.getElementById('result-title').focus();
       } });
-      document.getElementById('language').addEventListener('click', saveLanguageState);
+      document.querySelectorAll('[data-language-switch]').forEach(function (link) { link.addEventListener('click', saveLanguageState); });
       restoreLanguageState();
       applyLanguage(language);
     }());

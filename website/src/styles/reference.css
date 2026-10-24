@@ -15,8 +15,13 @@
     .site-nav .nav-link[aria-current="page"] { color:var(--on-navy); background:none; box-shadow:inset 0 -2px 0 var(--accent); border-radius:0; }
     .site-nav .nav-link[aria-current="page"]::before { display:none; }
     .site-nav .nav-stars { border-color:rgba(255,255,255,.2); background:none; color:var(--on-navy); }
-    .site-nav .btn-theme, .site-nav .btn-lang { border-color:rgba(255,255,255,.24); border-radius:3px; color:var(--on-navy-2); }
-    .site-nav .btn-theme:hover, .site-nav .btn-lang:hover { color:var(--on-navy); border-color:rgba(255,255,255,.5); }
+    .site-nav .btn-theme { border-color:rgba(255,255,255,.24); border-radius:3px; color:var(--on-navy-2); }
+    .site-nav .btn-theme:hover { color:var(--on-navy); border-color:rgba(255,255,255,.5); }
+    .site-nav .lang-switch { border-color:rgba(255,255,255,.24); border-radius:3px; }
+    .site-nav .lang-option { color:var(--on-navy-2); }
+    .site-nav .lang-option + .lang-option { border-left-color:rgba(255,255,255,.24); }
+    .site-nav .lang-option:hover { color:var(--on-navy); background:rgba(255,255,255,.08); }
+    .site-nav .lang-option[aria-current="true"] { color:var(--on-navy); background:rgba(255,255,255,.18); }
     .site-nav .nav-cta { border-radius:3px; border-color:var(--accent); background:var(--accent); color:#fff; }
     .site-nav .nav-cta:hover { background:var(--accent-hover); border-color:var(--accent-hover); box-shadow:none; }
     :root[data-theme="dark"] .site-nav .nav-cta { color:#0f1b2a; }
@@ -47,3 +52,6 @@
       .site-nav .nav-links::-webkit-scrollbar { display:none; }
       .site-nav .nav-link { flex:none; }
     }
+
+    /* Traditional Chinese prefers the TC cut of the CJK fallback fonts. */
+    html[lang="zh-Hant"] { --font-body:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang TC','Microsoft JhengHei','Noto Sans TC',sans-serif; --font-title:var(--font-body); }

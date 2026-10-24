@@ -6,7 +6,7 @@ import test from 'node:test';
 import { createHash } from 'node:crypto';
 import { publishSeo, stripPublishedArtifactMetadata } from '../scripts/publish-seo.mjs';
 import { CASES } from '../src/data/gallery-presentation.mjs';
-import { canonicalPath, sitePages } from '../src/data/site-urls.mjs';
+import { canonicalPath, sitePages, SITE_LANGS } from '../src/data/site-urls.mjs';
 
 const digest = value => createHash('sha256').update(value).digest('hex');
 
@@ -16,7 +16,7 @@ test('SEO insertion preserves replacement tokens in authored gallery copy', t =>
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-seo-dollar-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   fs.cpSync(new URL('../../docs/cases/', import.meta.url), path.join(root, 'cases'), { recursive: true });
-  for (const page of sitePages) for (const lang of ['en', 'zh']) {
+  for (const page of sitePages) for (const lang of SITE_LANGS) {
     const route = canonicalPath(page, lang).slice(1);
     const file = path.join(root, route === '' ? 'index.html' : `${route}.html`);
     fs.mkdirSync(path.dirname(file), { recursive: true });

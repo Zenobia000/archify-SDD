@@ -83,6 +83,19 @@ That receipt proves the hosting migration changed no pixels; it is not a gate fo
 
 `architecture.html` and the `packs/` routes present the engineering viewpoint catalog (`archify/recipes/viewpoints.mjs`) and the reference document packs registered in `src/data/pack-registry.mjs`. Pack pages read the generated `docs/packs/<id>/artifacts/pack.manifest.json`; run `npm --prefix archify run build:packs` after changing a pack source, then rebuild the site. Diagram pages embed artifacts with `?embed=1&preset=reference`.
 
+## Languages
+
+The site has three routes: English (`/`), Simplified Chinese (`/zh/…`) and Traditional Chinese (`/zh-tw/…`). `src/data/site-urls.mjs` owns the route list (`SITE_LANGS`) and every path helper; the language switcher in `Navigation.astro` offers all three on every page.
+
+Traditional Chinese is not hand-written. Both Chinese routes render the same authored `zh` copy (`data-zh`, the `site-translations.mjs` dictionaries, the `*.zh.md` articles, gallery and recipe copy), and `src/data/to-traditional.mjs` converts it at build time with OpenCC (`s2twp`, Taiwan vocabulary: 软件→軟體, 文档→文件, 社区→社群). Edit the Simplified source, never the generated Traditional page.
+
+Two rules keep the conversion safe:
+
+- The converter only ever sees Simplified text. Running it over text that is already Traditional rewrites it (文件→檔案, 後台→後臺, 發佈→釋出). Pages whose content is authored Traditional — `architecture` and the document packs under `packs/` — therefore convert only the site's own `data-zh` strings (`localizeHtml(..., { convert })`) and leave pack content untouched.
+- Switcher labels (`简`, `繁`) are masked from conversion, so each script keeps its own name on every page.
+
+Client scripts read the authored language with `ArchifySiteLanguage.read()` (`en` or `zh`) and the page's route with `ArchifySiteLanguage.route()` (`en`, `zh` or `zh-tw`); use `htmlLang()` for `<html lang>`.
+
 ## Search and AI discovery
 
 The ten main language pages contain their translated body text, metadata and recipe references before JavaScript runs. Language links navigate to real URLs; URL language takes precedence over stored preferences. Existing `?lang=` entry links migrate to the matching route and preserve other parameters and fragments. Guide drafts survive a language switch once in session storage, expire after 30 seconds, and are never placed in the URL or sent over the network.

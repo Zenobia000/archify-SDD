@@ -16,19 +16,21 @@ function page({ language = 'en', href = 'https://archify.si/guide', target = 'ht
   function element(id) {
     if (!elements.has(id)) {
       const handlers = new Map(), classes = new Set();
-      elements.set(id, {
+      const item = {
         value: '', textContent: '', innerHTML: '', href: target,
         classList: { add(value) { classes.add(value); }, remove(value) { classes.delete(value); }, contains(value) { return classes.has(value); } },
         addEventListener(event, handler) { handlers.set(event, handler); }, setAttribute() {}, focus() {}, scrollIntoView() {},
-        dispatch(event, detail) { handlers.get(event)?.(detail); },
-      });
+        // Like a real event, a click knows the link it was dispatched on.
+        dispatch(event, detail) { handlers.get(event)?.({ ...detail, currentTarget: item }); },
+      };
+      elements.set(id, item);
     }
     return elements.get(id);
   }
   element('guide-data').textContent = JSON.stringify(recipes);
   element('site-copy').textContent = JSON.stringify(guideCopy);
   const document = {
-    documentElement: {}, getElementById: element, querySelectorAll() { return []; },
+    documentElement: {}, getElementById: element, querySelectorAll(selector) { return selector === '[data-language-switch]' ? [element('language')] : []; },
     createElement() { return { textContent: '', get innerHTML() { return this.textContent; } }; },
   };
   const sessionStorage = {
@@ -37,7 +39,7 @@ function page({ language = 'en', href = 'https://archify.si/guide', target = 'ht
     removeItem(name) { if (denyStorage) throw new Error('blocked'); storage.delete(name); },
   };
   vm.runInNewContext(script, { document, sessionStorage, window: { location: { href } },
-    URL, ArchifySiteLanguage: { read() { return language; }, write() { return language; }, page(name, suffix) { return name + (suffix || ''); } },
+    URL, ArchifySiteLanguage: { read() { return language; }, write() { return language; }, htmlLang() { return language === 'zh' ? 'zh-Hans' : 'en'; }, page(name, suffix) { return name + (suffix || ''); } },
   });
   return { element, storage };
 }

@@ -85,7 +85,6 @@
   let beat = 0;
   let pageBeat = 0;
   const $ = id => document.getElementById(id);
-  const btnLang = $('btn-lang');
   const proofStage = $('hero-proof-stage');
   const proofFrame = $('hero-proof-frame');
   const pageFrame = $('hero-page-frame');
@@ -301,9 +300,7 @@
 
   function applyLang(l) {
     lang = ArchifySiteLanguage.write(l);
-    document.documentElement.lang = lang === 'zh' ? 'zh-Hans' : 'en';
-    btnLang.textContent = lang === 'zh' ? 'EN' : '中文';
-    btnLang.setAttribute('aria-label', lang === 'zh' ? 'Switch to English' : '切换到中文');
+    document.documentElement.lang = ArchifySiteLanguage.htmlLang();
     const dict = LANGS[lang];
     document.querySelectorAll('[data-i18n]').forEach(el => {
       const v = dict[el.dataset.i18n];

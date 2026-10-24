@@ -9,7 +9,7 @@ import {
   C4_LABELS, CONCERNS, CONCERN_LABELS, LEVELS, LEVEL_LABELS, PACKS, TYPE_LABELS,
   artifactPage, catalog, documents, exampleFor, packPage, roles, viewpoints,
 } from '../data/architecture-center.mjs';
-const { lang = 'en' } = Astro.props as { lang?: 'en' | 'zh' };
+const { lang = 'en' } = Astro.props as { lang?: 'en' | 'zh' | 'zh-tw' };
 const t = (en: string, zh: string) => ({ 'data-en': en, 'data-zh': zh });
 const matrixViewpoint = (level: string, concern: string) => viewpoints.find((entry) => entry.matrix && entry.level === level && entry.concern === concern);
 const extras = viewpoints.filter((entry) => !entry.matrix);

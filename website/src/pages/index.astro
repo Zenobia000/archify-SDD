@@ -69,7 +69,7 @@ const { lang = 'en' } = Astro.props;
       <div class="stage-window" id="hero-proof-stage" data-proof-playback="first-fold-once" data-mode="map">
         <div class="window-bar">
           <span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span>
-          <div class="mode-switch" role="group" aria-label={lang === 'zh' ? '选择 Archify 生成什么' : 'Choose what Archify makes'}>
+          <div class="mode-switch" role="group" aria-label={lang !== 'en' ? '选择 Archify 生成什么' : 'Choose what Archify makes'}>
             <span class="mode-thumb" aria-hidden="true"></span>
             <button type="button" data-mode="map" aria-pressed="true"><span data-i18n="mode-map">Map</span></button>
             <button type="button" data-mode="page" aria-pressed="false"><span data-i18n="mode-page">Page</span><i class="mode-new" data-i18n="mode-new">New</i></button>
@@ -98,7 +98,7 @@ const { lang = 'en' } = Astro.props;
             <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><rect x="2" y="5.5" width="8" height="5.5" rx="1.2" stroke="currentColor" stroke-width="1.2"/><path d="M4 5.5V4a2 2 0 1 1 4 0v1.5" stroke="currentColor" stroke-width="1.2"/></svg>
             <span id="address-file">agent-tool-call.workflow.html</span><b id="address-hash"></b>
           </div>
-          <a class="proof-open" id="proof-open" href="gallery/artifacts/agent-tool-call.workflow.html?present=1#focus=planner&amp;reach=downstream" target="_blank" rel="noopener" aria-label={lang === 'zh' ? '在新标签页打开交互图表' : 'Open the interactive diagram in a new tab'}>
+          <a class="proof-open" id="proof-open" href="gallery/artifacts/agent-tool-call.workflow.html?present=1#focus=planner&amp;reach=downstream" target="_blank" rel="noopener" aria-label={lang !== 'en' ? '在新标签页打开交互图表' : 'Open the interactive diagram in a new tab'}>
             <span data-i18n="proof-open">Open artifact</span><span aria-hidden="true">↗</span>
           </a>
         </div>
@@ -149,7 +149,7 @@ const { lang = 'en' } = Astro.props;
         <h2 class="section-heading" data-i18n="answers-h2">Ask a question. <em>Get a page you can check.</em></h2>
         <p class="section-body" data-i18n="answers-body">Not every answer is one diagram. Ask your agent to answer as a page: the conclusion comes first, then one panel per question with tables, steps, charts, code and validated diagrams. Steps light the diagram they walk through, claims cite their sources, and code is pinned to a commit.</p>
       </header>
-      <ul class="answer-traits fade-up" aria-label={lang === 'zh' ? '一页式解答包含什么' : 'What a one-page answer holds'}>
+      <ul class="answer-traits fade-up" aria-label={lang !== 'en' ? '一页式解答包含什么' : 'What a one-page answer holds'}>
         <li data-i18n="trait-1">Conclusion first</li><li data-i18n="trait-2">Steps beside the diagram</li><li data-i18n="trait-3">Numbered sources</li><li data-i18n="trait-4">Code pinned to a commit</li><li data-i18n="trait-5">Charts from your data</li><li data-i18n="trait-6">Checklists</li><li data-i18n="trait-7">Four styles · light and dark</li><li data-i18n="trait-8">Long image · PDF</li><li data-i18n="trait-9">Follow-up per panel</li>
       </ul>
       <!-- Each plate holds the whole page; hovering scrolls through it top to bottom. -->

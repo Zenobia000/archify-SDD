@@ -3,13 +3,13 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { canonicalPath, sitePages } from '../website/src/data/site-urls.mjs';
+import { canonicalPath, sitePages, SITE_LANGS } from '../website/src/data/site-urls.mjs';
 import { checkCloudflareOutput } from '../website/scripts/check-cloudflare-output.mjs';
 
 function fixture(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-cloudflare-output-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
-  const names = sitePages.flatMap(page => ['en', 'zh'].map(lang => canonicalPath(page, lang).slice(1) || 'index'));
+  const names = sitePages.flatMap(page => SITE_LANGS.map(lang => canonicalPath(page, lang).slice(1) || 'index'));
   const urls = names.map(name => `https://archify.si/${name === 'index' ? '' : name}`);
   for (const [index, name] of names.entries()) {
     fs.mkdirSync(path.dirname(path.join(root, `${name}.html`)), { recursive: true });
@@ -28,7 +28,7 @@ function fixture(t) {
 }
 
 test('Cloudflare output accepts static files and extensionless canonical routes', t => {
-  assert.equal(checkCloudflareOutput(fixture(t)), sitePages.length * 2 + 1);
+  assert.equal(checkCloudflareOutput(fixture(t)), sitePages.length * SITE_LANGS.length + 1);
 });
 
 test('Cloudflare output rejects a missing 404 before implicit SPA fallback can ship', t => {
@@ -61,7 +61,7 @@ test('Cloudflare output rejects an asset exceeding the Pages upload limit', t =>
 test('Cloudflare output resolves nested-page assets against the HTML base', t => {
   const root = fixture(t);
   fs.appendFileSync(path.join(root, 'zh/guide.html'), '<base href="../"><link href="site.css" rel="stylesheet">');
-  assert.equal(checkCloudflareOutput(root), sitePages.length * 2 + 1);
+  assert.equal(checkCloudflareOutput(root), sitePages.length * SITE_LANGS.length + 1);
   fs.rmSync(path.join(root, 'site.css'));
   assert.throws(() => checkCloudflareOutput(root), /missing local target site\.css/);
 });

@@ -54,7 +54,7 @@ const { lang = 'en' } = Astro.props;
       <div class="cards" id="cards"></div>
     </section>
     <RecipeReference recipes={guide} />
-    <aside class="agent-guide-link" aria-label={lang === 'zh' ? 'Agent 画图指南' : 'Agent diagramming guide'}>
+    <aside class="agent-guide-link" aria-label={lang !== 'en' ? 'Agent 画图指南' : 'Agent diagramming guide'}>
       <a href="agent-diagrams.html" data-en="From prompt to a diagram you can trust →" data-zh="从提示词到可检查的图 →">From prompt to a diagram you can trust →</a>
       <p data-en="Learn how to author, review and share diagrams with your coding agent." data-zh="了解如何用 Coding Agent 编写、检查和分享图表。">Learn how to author, review and share diagrams with your coding agent.</p>
     </aside>

@@ -26,7 +26,6 @@
       var proofLink = document.getElementById('proof-link');
       var proofMeta = document.getElementById('proof-meta');
       var copyReceipts = new Map();
-      var languageButton = document.getElementById('language');
       var agentState = document.getElementById('agent-state');
       var installCommand = document.getElementById('install-command');
       var projectCommand = document.getElementById('project-command');
@@ -36,12 +35,10 @@
       }
 
       function updateStaticCopy() {
-        document.documentElement.lang = language === 'zh' ? 'zh-Hans' : 'en';
+        document.documentElement.lang = ArchifySiteLanguage.htmlLang();
         document.querySelectorAll('[data-en][data-zh]').forEach(function (element) {
           element.textContent = copyForElement(element);
         });
-        languageButton.textContent = language === 'zh' ? 'EN' : '中文';
-        languageButton.setAttribute('aria-label', language === 'zh' ? 'Switch to English' : '切换到中文');
       }
 
       function updateUrl() {

@@ -54,9 +54,9 @@ test('real Chrome: community metadata remains text through language, filter and 
       await browser.cdp.send('Page.navigate', { url }, session);
       await loaded;
     };
-    const switchLanguage = async () => {
+    const switchLanguage = async target => {
       const loaded = browser.cdp.waitFor('Page.loadEventFired', session);
-      await evaluate("document.getElementById('language').click()");
+      await evaluate(`document.querySelector('[data-language-switch="${target}"]').click()`);
       await loaded;
     };
     const assertText = async language => {
@@ -84,9 +84,9 @@ test('real Chrome: community metadata remains text through language, filter and 
       for (const language of ['en', 'zh']) {
         await navigate(`${fixtureBase}/${language === 'zh' ? 'zh/' : ''}community.html`);
         await assertText(language);
-        await switchLanguage();
+        await switchLanguage(language === 'en' ? 'zh' : 'en');
         await assertText(language === 'en' ? 'zh' : 'en');
-        await switchLanguage();
+        await switchLanguage(language);
         await assertText(language);
       }
       await evaluate("document.querySelector('[data-filter=recipe]').click()");

@@ -1,4 +1,4 @@
-import { sitePages } from '../src/data/site-urls.mjs';
+import { sitePages, SITE_LANGS, outputFile, canonicalPath, hreflang } from '../src/data/site-urls.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -29,12 +29,13 @@ test('deployment publishes only the declared case metadata while retaining every
   }
 });
 
-test('built deployment uses host-compatible generated assets and canonical metadata in both languages', () => {
-  for (const lang of ['en', 'zh']) for (const page of pages) {
-    const file = page === 'index' ? `${lang === 'zh' ? 'zh' : 'index'}.html` : `${lang === 'zh' ? 'zh/' : ''}${page}.html`;
+test('built deployment uses host-compatible generated assets and canonical metadata in every language', () => {
+  for (const lang of SITE_LANGS) for (const page of pages) {
+    const file = outputFile(page, lang);
+    const prefix = lang === 'en' ? '' : `${lang}/`;
     const dom = parse(fs.readFileSync(new URL(file, output), 'utf8'));
     const all = nodes(dom);
-    const canonicalUrl = `https://archify.si/${page === 'index' ? (lang === 'zh' ? 'zh' : '') : `${lang === 'zh' ? 'zh/' : ''}${page}`}`;
+    const canonicalUrl = `https://archify.si${canonicalPath(page, lang)}`;
     const bases = all.filter(node => node.tagName === 'base');
     assert.equal(bases.length, 1, file);
     assert.equal(attr(bases[0], 'href'), '../'.repeat(file.split('/').length - 1) || './', file);
@@ -43,7 +44,7 @@ test('built deployment uses host-compatible generated assets and canonical metad
     const nav = all.find(node => node.tagName === 'nav' && attr(node, 'class') === 'site-nav');
     const navLinks = nodes(nav).filter(node => node.tagName === 'a' && (attr(node, 'class') || '').split(/\s+/).includes('nav-link'));
     assert.deepEqual(navLinks.map(node => new URL(attr(node, 'href'), baseUri).href), [
-      ...['architecture', 'guide', 'gallery', 'start', 'community'].map(target => `${cloudflare ? 'https://archify.si/' : 'https://tt-a1i.github.io/archify/'}${lang === 'zh' ? 'zh/' : ''}${target}${cloudflare ? '' : '.html'}`),
+      ...['architecture', 'guide', 'gallery', 'start', 'community'].map(target => `${cloudflare ? 'https://archify.si/' : 'https://tt-a1i.github.io/archify/'}${prefix}${target}${cloudflare ? '' : '.html'}`),
       'https://github.com/tt-a1i/archify',
     ], `${file}: routes resolved against the actual document base`);
     const canonical = all.filter(node => node.tagName === 'link' && attr(node, 'rel') === 'canonical');
@@ -51,9 +52,8 @@ test('built deployment uses host-compatible generated assets and canonical metad
     assert.equal(attr(canonical[0], 'href'), canonicalUrl, file);
     const alternates = all.filter(node => node.tagName === 'link' && attr(node, 'rel') === 'alternate');
     assert.deepEqual(alternates.map(node => [attr(node, 'hreflang'), attr(node, 'href')]), [
-      ['en', `https://archify.si/${page === 'index' ? '' : page}`],
-      ['zh-Hans', `https://archify.si/${page === 'index' ? 'zh' : `zh/${page}`}`],
-      ['x-default', `https://archify.si/${page === 'index' ? '' : page}`],
+      ...SITE_LANGS.map(route => [hreflang(route), `https://archify.si${canonicalPath(page, route)}`]),
+      ['x-default', `https://archify.si${canonicalPath(page, 'en')}`],
     ], file);
     const generatedAssets = all.flatMap(node => ['src', 'href'].map(name => attr(node, name))).filter(value => value?.includes('/_astro/'));
     for (const asset of generatedAssets) {
