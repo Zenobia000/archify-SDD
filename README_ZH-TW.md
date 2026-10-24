@@ -125,6 +125,7 @@ npx skills add Zenobia000/archify-SDD -g
 - **由 sunnyDataScience 獨立維護。** 這個 fork 自由分岔，路線由維護者決定，不保證與上游同步。
 - **選擇性取回上游。** 保留 `upstream` remote，上游有價值的修正（渲染器、viewer、安全性）會評估後合入。
 - **問題回報。** 屬於這一層的（視角、追溯、文件包、Architecture Center、繁體中文介面）請開 issue 到本 repo。屬於核心渲染的問題，請先在上游確認是否也會重現。
+- **更新提醒預設關閉。** 上游的更新提醒比對的是上游的版本，這個 fork 不會發佈那些版本，所以改為選擇性啟用：設定 `ARCHIFY_UPDATE_CHECK_DISABLED=0` 才會檢查。預設不會發出任何更新請求。
 - **授權。** MIT。`LICENSE` 新增一行 sunnyDataScience（Archify-SDD），並保留 tt-a1i（Archify）與 Cocoon AI 的版權聲明，不得移除。
 - **貢獻。** 見 [CONTRIBUTING.md](CONTRIBUTING.md)。
 

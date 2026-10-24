@@ -134,6 +134,7 @@ This fork's Skill has the same name as upstream's (`archify`), so **install eith
 - **Independently maintained** by sunnyDataScience. Free divergence; the direction is set here and is not guaranteed to track upstream.
 - **Upstream, selectively.** An `upstream` remote is kept; valuable upstream fixes (renderer, viewer, security) are reviewed and merged.
 - **Reporting.** Issues in this layer (viewpoints, traceability, packs, the Architecture Center, the Traditional Chinese UI) belong in this repository. Core rendering issues: check whether they reproduce upstream first.
+- **Update reminders are off.** The reminder in upstream Archify compares your install with upstream's releases, which this fork does not ship, so the check is opt-in here: set `ARCHIFY_UPDATE_CHECK_DISABLED=0` to enable it. By default no update request is made.
 - **License.** MIT. `LICENSE` adds a sunnyDataScience (Archify-SDD) line and keeps the tt-a1i (Archify) and Cocoon AI notices.
 
 ### What this fork adds

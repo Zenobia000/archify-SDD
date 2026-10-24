@@ -51,8 +51,11 @@ function silent(reason) {
   return { status: 'silent', reason };
 }
 
+// Archify-SDD: the manifest this contract pins belongs to the upstream project,
+// so a reminder would report upstream releases that this fork never ships. The
+// check is therefore opt-in here; set ARCHIFY_UPDATE_CHECK_DISABLED=0 to enable it.
 function updatesDisabled() {
-  return process.env.ARCHIFY_UPDATE_CHECK_DISABLED === '1';
+  return process.env.ARCHIFY_UPDATE_CHECK_DISABLED !== '0';
 }
 
 function isPlainObject(value) {

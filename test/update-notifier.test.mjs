@@ -15,6 +15,9 @@ import {
 } from '../archify/scripts/check-update.mjs';
 import { DEFAULT_MANIFEST_URL, compareSemver, parseSemver } from '../archify/scripts/update-contract.mjs';
 
+// Archify-SDD ships with the update check off; this suite exercises the enabled path.
+process.env.ARCHIFY_UPDATE_CHECK_DISABLED = '0';
+
 const here = path.dirname(fileURLToPath(import.meta.url));
 const skillRoot = path.resolve(here, '..', 'archify');
 const checkerPath = path.join(skillRoot, 'scripts', 'check-update.mjs');
@@ -2969,6 +2972,21 @@ test('disabled CLI returns one silent JSON line and never needs the network', ()
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(JSON.parse(result.stdout), { status: 'silent', reason: 'disabled' });
   assert.equal(result.stdout.trim().split('\n').length, 1);
+});
+
+test('the update check is off unless ARCHIFY_UPDATE_CHECK_DISABLED is exactly 0', () => {
+  const run = (value) => {
+    const env = { ...process.env };
+    if (value === undefined) delete env.ARCHIFY_UPDATE_CHECK_DISABLED;
+    else env.ARCHIFY_UPDATE_CHECK_DISABLED = value;
+    const result = spawnSync(process.execPath, [checkerPath], { cwd: skillRoot, encoding: 'utf8', env });
+    assert.equal(result.status, 0, result.stderr);
+    return JSON.parse(result.stdout);
+  };
+  // Unset, "1" and anything else stay offline; only "0" opts in, so none of these touch the network.
+  for (const value of [undefined, '1', '', 'true', 'off']) {
+    assert.deepEqual(run(value), { status: 'silent', reason: 'disabled' }, `value ${JSON.stringify(value)}`);
+  }
 });
 
 test('legacy CLI acknowledgement is a harmless one-line no-op', async (t) => {

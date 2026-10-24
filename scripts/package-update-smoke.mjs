@@ -26,48 +26,56 @@ export async function verifyPackagedUpdateChecker(skillRoot, cacheDirectory) {
     throw new Error('packaged update checker did not honor the local disable switch');
   }
 
-  const checker = await import(pathToFileURL(updateChecker).href);
-  const versionCore = /^(\d+)\.(\d+)\.(\d+)/.exec(packageJson.version);
-  if (!versionCore) throw new Error('package version cannot produce an update-check smoke candidate');
-  const candidateVersion = `${versionCore[1]}.${versionCore[2]}.${BigInt(versionCore[3]) + 1n}`;
-  const candidate = {
-    schemaVersion: 1,
-    skillId: 'archify',
-    channel: 'stable',
-    version: candidateVersion,
-    publishedAt: '2026-08-28T00:00:00Z',
-    source: {
-      repository: 'https://github.com/tt-a1i/archify',
-      ref: `v${candidateVersion}`,
-      treeSha: 'a'.repeat(40),
-    },
-    artifact: { sha256: 'b'.repeat(64) },
-    summary: 'Package smoke candidate.',
-    releaseNotes: `https://github.com/tt-a1i/archify/releases/tag/v${candidateVersion}`,
-    severity: 'normal',
-  };
-  const notifierReceipt = await checker.checkForUpdate({
-    cacheDirectory,
-    fetchImpl: async () => new Response(JSON.stringify(candidate), {
-      status: 200,
-      headers: { 'content-type': 'application/json', etag: '"package-smoke"' },
-    }),
-    now: () => Date.parse('2026-08-28T00:00:00Z'),
-    random: () => 0.5,
-  });
-  if (notifierReceipt.status !== 'update_available') {
-    throw new Error(`packaged update checker did not return an update candidate: ${JSON.stringify(notifierReceipt)}`);
-  }
-  const notifierSnooze = await checker.setUpdatePreference({
-    releasePath: path.join(skillRoot, 'skill-release.json'),
-    cacheDirectory,
-    eventKey: notifierReceipt.eventKey,
-    mode: 'snooze',
-    now: () => Date.parse('2026-08-28T00:00:01Z'),
-  });
-  if (notifierSnooze.status !== 'snoozed') {
-    throw new Error('packaged update checker did not persist an explicit snooze');
-  }
+  // Archify-SDD ships with the update check off; the in-process checks below opt in explicitly.
+  const previousDisabled = process.env.ARCHIFY_UPDATE_CHECK_DISABLED;
+  process.env.ARCHIFY_UPDATE_CHECK_DISABLED = '0';
+  try {
+    const checker = await import(pathToFileURL(updateChecker).href);
+    const versionCore = /^(\d+)\.(\d+)\.(\d+)/.exec(packageJson.version);
+    if (!versionCore) throw new Error('package version cannot produce an update-check smoke candidate');
+    const candidateVersion = `${versionCore[1]}.${versionCore[2]}.${BigInt(versionCore[3]) + 1n}`;
+    const candidate = {
+      schemaVersion: 1,
+      skillId: 'archify',
+      channel: 'stable',
+      version: candidateVersion,
+      publishedAt: '2026-08-28T00:00:00Z',
+      source: {
+        repository: 'https://github.com/tt-a1i/archify',
+        ref: `v${candidateVersion}`,
+        treeSha: 'a'.repeat(40),
+      },
+      artifact: { sha256: 'b'.repeat(64) },
+      summary: 'Package smoke candidate.',
+      releaseNotes: `https://github.com/tt-a1i/archify/releases/tag/v${candidateVersion}`,
+      severity: 'normal',
+    };
+    const notifierReceipt = await checker.checkForUpdate({
+      cacheDirectory,
+      fetchImpl: async () => new Response(JSON.stringify(candidate), {
+        status: 200,
+        headers: { 'content-type': 'application/json', etag: '"package-smoke"' },
+      }),
+      now: () => Date.parse('2026-08-28T00:00:00Z'),
+      random: () => 0.5,
+    });
+    if (notifierReceipt.status !== 'update_available') {
+      throw new Error(`packaged update checker did not return an update candidate: ${JSON.stringify(notifierReceipt)}`);
+    }
+    const notifierSnooze = await checker.setUpdatePreference({
+      releasePath: path.join(skillRoot, 'skill-release.json'),
+      cacheDirectory,
+      eventKey: notifierReceipt.eventKey,
+      mode: 'snooze',
+      now: () => Date.parse('2026-08-28T00:00:01Z'),
+    });
+    if (notifierSnooze.status !== 'snoozed') {
+      throw new Error('packaged update checker did not persist an explicit snooze');
+    }
 
-  return { candidateVersion, notifierReceipt };
+    return { candidateVersion, notifierReceipt };
+  } finally {
+    if (previousDisabled === undefined) delete process.env.ARCHIFY_UPDATE_CHECK_DISABLED;
+    else process.env.ARCHIFY_UPDATE_CHECK_DISABLED = previousDisabled;
+  }
 }

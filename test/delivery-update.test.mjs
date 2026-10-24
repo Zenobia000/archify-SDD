@@ -10,6 +10,9 @@ import { checkForUpdate } from '../archify/scripts/check-update.mjs';
 import { startDeliveryUpdateCheck } from '../archify/bin/delivery-update.mjs';
 import { runFinalize } from '../archify/bin/finalize.mjs';
 
+// Archify-SDD ships with the update check off; this suite exercises the enabled path.
+process.env.ARCHIFY_UPDATE_CHECK_DISABLED = '0';
+
 const skillRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'archify');
 const cli = path.join(skillRoot, 'bin', 'archify.mjs');
 const installed = '2.15.0';
