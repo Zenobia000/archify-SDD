@@ -20,6 +20,7 @@
   <a href="https://archify.si/zh/guide"><strong>场景指南</strong></a> &nbsp;·&nbsp;
   <a href="#社区交流"><strong>社区交流</strong></a> &nbsp;·&nbsp;
   <a href="./README.md"><strong>English</strong></a> &nbsp;·&nbsp;
+  <a href="./README_ZH-TW.md"><strong>繁體中文</strong></a> &nbsp;·&nbsp;
   <a href="./README_JA.md"><strong>日本語</strong></a> &nbsp;·&nbsp;
   <a href="./README_KO.md"><strong>한국어</strong></a>
 </p>

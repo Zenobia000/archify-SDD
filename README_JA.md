@@ -21,6 +21,7 @@
   <a href="#コミュニティ"><strong>コミュニティ</strong></a> &nbsp;·&nbsp;
   <a href="./README.md"><strong>English</strong></a> &nbsp;·&nbsp;
   <a href="./README_ZH.md"><strong>简体中文</strong></a> &nbsp;·&nbsp;
+  <a href="./README_ZH-TW.md"><strong>繁體中文</strong></a> &nbsp;·&nbsp;
   <a href="./README_KO.md"><strong>한국어</strong></a>
 </p>
 

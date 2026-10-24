@@ -1,3 +1,5 @@
+<p align="center"><strong>Archify-SDD</strong> is a community fork of <a href="https://github.com/tt-a1i/archify">Archify</a> by tt-a1i, extended for the SDLC document chain (BRD · SRS · SAD · SDD · ADR). <a href="#archify-sdd">Tribute, design logic and workflow ↓</a></p>
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/archify-lockup-dark.svg" />
@@ -20,6 +22,7 @@
   <a href="https://archify.si/guide.html"><strong>Scenario guide</strong></a> &nbsp;·&nbsp;
   <a href="#community"><strong>Community</strong></a> &nbsp;·&nbsp;
   <a href="./README_ZH.md"><strong>简体中文</strong></a> &nbsp;·&nbsp;
+  <a href="./README_ZH-TW.md"><strong>繁體中文</strong></a> &nbsp;·&nbsp;
   <a href="./README_JA.md"><strong>日本語</strong></a> &nbsp;·&nbsp;
   <a href="./README_KO.md"><strong>한국어</strong></a>
 </p>
@@ -45,6 +48,101 @@
 </p>
 
 <p align="center"><a href="#sponsors"><strong>❤️ Partners & sponsors: Kimi Work · Supercode · OpenLux</strong></a></p>
+
+<a id="archify-sdd"></a>
+## Archify-SDD: from business logic to engineering diagrams
+
+Archify-SDD is a community fork of [Archify](https://github.com/tt-a1i/archify), maintained independently by [Zenobia000](https://github.com/Zenobia000). It answers one question: **how do we get an agent to quickly break a piece of business logic apart and turn it into the diagrams an engineering team actually builds from?**
+
+If your job is to turn one sentence of business need into a set of diagrams that analysts, architects, designers and developers can each read — and that line up with one another — this version is for you. Use it, poke at it, send a PR. Full story in Traditional Chinese: [繁體中文](./README_ZH-TW.md).
+
+### A tribute first
+
+- **[tt-a1i](https://github.com/tt-a1i) and the Archify contributors** built the renderer, the interactive viewer, the JSON IR contract, the validators, the Skill packaging and the quality gates. This fork extends that foundation (and so touches the schemas and the viewer); it does not replace it.
+- **Cocoon AI**: `LICENSE` also carries a Cocoon AI copyright notice, which this fork keeps.
+- The MIT license and every notice above are preserved. If you want the foundation, go to [upstream](https://github.com/tt-a1i/archify); if you want this layer on top, you are in the right place.
+
+The sponsors, official channels, install counts and star history on this page describe the upstream project, not this fork.
+
+### Design logic: the SDLC document chain, drawn
+
+Archify draws one thing well. Archify-SDD adds the next question: **who is this diagram for, which document does it belong to, and how does it connect to the one above it?**
+
+The design follows the software development life cycle. Behind each core document is a senior role who reads it, signs it and decides from it, so the diagrams for that document are that role's working language:
+
+| Stage | Document | Main readers | Question it answers | Typical diagrams |
+|---|---|---|---|---|
+| Requirements | **BRD** Business Requirements | Business analyst, system analyst | Why the system exists | Business data flow, business process |
+| Analysis | **SRS** Software Requirements Specification | System analyst, software designer | What it must do | DFD level 1, activity, state machine |
+| Architecture | **SAD** Software Architecture Document | Software architect | How it is shaped | C4 L1 context, C4 L2 container, deployment |
+| Design | **SDD** Software Design Document | Software designer, developer | How each part is built | C4 L3 component, sequence, schema ER, class, module tree |
+| Decision | **ADR** Architecture Decision Record | Software architect | Why this choice | One-page decision record |
+
+Each diagram is placed on two axes, giving a 3×3 viewpoint matrix:
+
+| | Data | Behavior | Structure |
+|---|---|---|---|
+| **Business** | Business data flow | Business process | C4 L1 context |
+| **System** | DFD level 1 | Activity | C4 L2 container |
+| **Implementation** | Schema ER | Sequence | C4 L3 component |
+
+Rows are the level of abstraction, columns the concern. Going down a row is refinement: a business process refines into an activity, an activity into a sequence; C4 L1 drills into L2, L2 into L3. None of this is new notation — it is the map of what analysts, architects and designers already draw every day.
+
+### Workflow
+
+1. **Describe the business** in plain words: "an HR leave-approval system, approval embedded in the leave service".
+2. **Pick viewpoints.** The agent runs `archify guide --role <role>` or `--document <BRD|SRS|SAD|SDD|ADR>` to see which diagrams that role or document needs, then chooses by your request.
+3. **Draw one diagram at a time.** Each is a JSON file that declares where it sits in the matrix (`meta.viewpoint`) and the stable element IDs it shares with other diagrams (`meta.trace`, e.g. `C-20` is the leave service in every diagram).
+4. **Assemble a pack.** Diagrams that belong together go into one folder, `.archify/pack-<slug>-<timestamp>/`, and `archify pack render` produces a standalone `index.html`: viewpoint matrix, hierarchy tree, traceability table, filters by role and document, and each diagram interactive on click.
+5. **Check.** Dangling references, skipped C4 levels and components with several parents are flagged; `--browser-check` re-verifies in a real browser.
+
+**Demand-driven, not the whole matrix at once.** The viewpoint catalog is a menu, not a checklist. Ask for one C4 L2 and you get one. References between diagrams are soft: a missing target becomes a warning, and adding it later never requires editing the diagrams already drawn.
+
+C4 levels relate as follows: one L1 per system; L2 is one-to-one with L1; L3 is many-to-one (one per container worth opening); deployment is an alternate view of L2, not another level.
+
+### Try it
+
+Two complete fictional reference packs, 14 diagrams each, covering BRD, SRS, SAD, SDD and ADR. Open the entry file in a browser; no network or build needed.
+
+| Pack | Topic | Language | Entry |
+|---|---|---|---|
+| **LeaveFlow** | Leave and approval (dynamic steps, delegated approval, return / add-sign / countersign, escalation) | Traditional Chinese | `docs/packs/leave-approval/artifacts/index.html` |
+| **CareSlot** | Clinic booking and reminders | English | `docs/packs/careslot/artifacts/index.html` |
+
+Browse the whole Architecture Center locally (English, 简体, 繁體):
+
+```bash
+npm --prefix website ci
+npm --prefix website run dev
+```
+
+Install this version's Skill:
+
+```bash
+# confirm the source exposes exactly one Skill named archify
+npx -y skills add Zenobia000/archify-SDD --list --full-depth
+
+npx skills add Zenobia000/archify-SDD -g
+```
+
+This fork's Skill has the same name as upstream's (`archify`), so **install either upstream or this version, not both**. Everything else (the 10 native diagram types and the one-page explainer, export, sharing, agent-specific installs) is as described in the upstream sections below.
+
+### Fork and maintenance
+
+- **Independently maintained.** Free divergence; the direction is set here and is not guaranteed to track upstream.
+- **Upstream, selectively.** An `upstream` remote is kept; valuable upstream fixes (renderer, viewer, security) are reviewed and merged.
+- **Reporting.** Issues in this layer (viewpoints, traceability, packs, the Architecture Center, the Traditional Chinese UI) belong in this repository. Core rendering issues: check whether they reproduce upstream first.
+- **License.** MIT. `LICENSE` keeps the tt-a1i (Archify) and Cocoon AI notices.
+
+### What this fork adds
+
+- Viewpoints and traceability: `meta.viewpoint`, `meta.trace`, stable cross-diagram element IDs.
+- The `reference` visual preset: white, neutral "architecture center" styling for document diagrams, instead of neon.
+- Document packs: `archify pack validate|render`, with a standalone `index.html`, `pack.manifest.json` and browser-check receipts.
+- Picking diagrams by role and document: `archify guide --role`, `--document`.
+- C4 hierarchy checks: skipped levels, multiple parents, unreachable diagrams, ambiguous drill-downs.
+- The website rebuilt as an Architecture Center, plus Traditional Chinese (`/zh-tw`).
+- The LeaveFlow and CareSlot reference packs.
 
 ## See Archify in action
 
