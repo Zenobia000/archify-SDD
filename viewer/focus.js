@@ -17,6 +17,8 @@
       var evidence = document.getElementById('focus-evidence');
       var repositoryLink = document.getElementById('focus-repository');
       var evidenceLinks = document.getElementById('focus-evidence-links');
+      var drill = document.getElementById('focus-drill');
+      var drillLinks = document.getElementById('focus-drill-links');
       var summary = document.getElementById('focus-summary');
       var reachSection = document.getElementById('focus-reach');
       var reachStatus = document.getElementById('focus-reach-status');
@@ -374,6 +376,28 @@
         });
         evidence.hidden = false;
       }
+      function renderDrillLinks(id) {
+        // Artifacts derived from an older template may lack the drill panel.
+        if (!drill || !drillLinks) return;
+        drillLinks.textContent = '';
+        var targets = Archify.trace ? Archify.trace.node(id) : [];
+        targets.forEach(function (target) {
+          var link = document.createElement('a');
+          link.className = 'semantic-passport-drill-link';
+          link.href = target.target + (target.focus ? '#focus=' + encodeURIComponent(target.focus) : '');
+          link.target = '_top';
+          link.rel = 'noopener';
+          var name = document.createElement('strong');
+          name.textContent = target.label || target.target.split('/').pop();
+          var path = document.createElement('small');
+          path.textContent = target.target;
+          link.appendChild(name);
+          link.appendChild(path);
+          link.setAttribute('aria-label', viewerText('viewer.passport.drill.open', { label: name.textContent }));
+          drillLinks.appendChild(link);
+        });
+        drill.hidden = !targets.length;
+      }
       function renderPassport(id, node) {
         setPassportValue(detail, node.getAttribute('data-node-sublabel'));
         setPassportValue(kind, viewerKindLabel(node.getAttribute('data-node-kind') || 'node'));
@@ -383,6 +407,7 @@
         semanticId.textContent = id;
         semanticId.hidden = false;
         renderSourceEvidence(id);
+        renderDrillLinks(id);
       }
       function relationshipsFor(id, byId) {
         var seen = {};

@@ -11,7 +11,7 @@ const skillRoot = path.resolve(__dirname, '..', 'archify');
 const cli = path.join(skillRoot, 'bin/archify.mjs');
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-edge-label-color-'));
 
-const PRESETS = ['classic', 'signal-flow', 'blueprint', 'editorial'];
+const PRESETS = ['classic', 'signal-flow', 'blueprint', 'editorial', 'reference'];
 const VARIANTS = ['default', 'emphasis', 'security', 'dashed'];
 const CASES = {
   architecture: {

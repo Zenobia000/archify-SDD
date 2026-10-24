@@ -7,7 +7,7 @@ export const NODE_CARD_ATTR = 'data-node-ui=""';
 
 export function nodeCardStyle() {
   const all = 'svg[data-node-ui]';
-  const solid = `${all}:is([data-preset="classic"], [data-preset="signal-flow"], [data-preset="editorial"])`;
+  const solid = `${all}:is([data-preset="classic"], [data-preset="signal-flow"], [data-preset="editorial"], [data-preset="reference"])`;
   const blueprint = `${all}[data-preset="blueprint"]`;
   const editorial = `${all}[data-preset="editorial"]`;
   const dark = `:is([data-theme="dark"] ${all}, ${all}[data-theme="dark"])`;

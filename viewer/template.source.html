@@ -21,9 +21,16 @@
           if (new URLSearchParams(window.location.search).get('present') === '1') {
             document.documentElement.setAttribute('data-present', 'true');
           }
+          var preset = new URLSearchParams(window.location.search).get('preset');
+          if (['classic', 'signal-flow', 'blueprint', 'editorial', 'reference'].indexOf(preset) >= 0) {
+            document.documentElement.setAttribute('data-preset', preset);
+          }
         } catch (_) {}
         if (!theme) {
           try { theme = localStorage.getItem('archify-theme'); } catch (_) {}
+        }
+        if ((theme !== 'light' && theme !== 'dark') && document.documentElement.getAttribute('data-preset') === 'reference') {
+          theme = 'light';
         }
         if (theme !== 'light' && theme !== 'dark') {
           theme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
@@ -217,6 +224,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <span class="preset-option-copy"><strong>{{i18n:viewer.preset.editorial}}</strong><small>{{i18n:viewer.preset.editorial.hint}}</small></span>
           <span class="preset-option-check" aria-hidden="true"></span>
         </button>
+        <button class="preset-option" data-preset-value="reference" type="button" role="menuitemradio" aria-checked="false" tabindex="-1">
+          <span class="preset-option-swatch reference" aria-hidden="true"></span>
+          <span class="preset-option-copy"><strong>{{i18n:viewer.preset.reference}}</strong><small>{{i18n:viewer.preset.reference.hint}}</small></span>
+          <span class="preset-option-check" aria-hidden="true"></span>
+        </button>
       </div>
     </div>
     <button id="btn-motion" type="button" hidden
@@ -281,6 +293,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <div class="pulse-dot"></div>
         <h1>[PROJECT NAME] Architecture</h1>
       </div>
+      <p class="viewpoint-chip" id="viewpoint-chip" hidden aria-label="{{i18n:viewer.viewpoint}}"></p>
       <p class="subtitle">[Subtitle description]</p>
     </div>
 
@@ -514,6 +527,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
                 <a class="semantic-passport-repository" id="focus-repository" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer"></a>
               </div>
               <div class="semantic-passport-evidence-links" id="focus-evidence-links"></div>
+            </div>
+            <div class="semantic-passport-drill" id="focus-drill" hidden aria-label="{{i18n:viewer.passport.drill}}">
+              <span class="semantic-passport-drill-label">{{i18n:viewer.passport.drill}}</span>
+              <div class="semantic-passport-drill-links" id="focus-drill-links"></div>
             </div>
             <span class="relationship-lens-summary" id="focus-summary" aria-live="polite"></span>
             <div class="semantic-passport-reach" id="focus-reach" hidden>
@@ -761,12 +778,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
        URL, or a later diagram's authored default.
        ============================================================ */
     Archify.preset = (function () {
-      var PRESETS = ['classic', 'signal-flow', 'blueprint', 'editorial'];
+      var PRESETS = ['classic', 'signal-flow', 'blueprint', 'editorial', 'reference'];
       var LABELS = {
         classic: viewerText('viewer.preset.classic.short'),
         'signal-flow': viewerText('viewer.preset.flow.short'),
         blueprint: viewerText('viewer.preset.blueprint'),
-        editorial: viewerText('viewer.preset.editorial')
+        editorial: viewerText('viewer.preset.editorial'),
+        reference: viewerText('viewer.preset.reference')
       };
       var html = document.documentElement;
       var svg = document.querySelector('.diagram-container svg');
@@ -823,6 +841,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         return false;
       }
 
+      if (svg && html.getAttribute('data-embed') === 'true') svg.setAttribute('data-preset', authored);
       apply(authored);
       btn.addEventListener('click', function (e) {
         e.stopPropagation();
@@ -980,6 +999,45 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         node: function (id) {
           var sources = payload && payload.nodes ? payload.nodes[id] : null;
           return Array.isArray(sources) ? sources.slice() : [];
+        }
+      };
+    })();
+
+    /* Viewpoint and trace metadata place this diagram inside a document pack:
+       a header chip names its level and concern, and nodes may link to a more
+       detailed diagram. Links are authored relative paths, never script URLs. */
+    Archify.trace = (function () {
+      var element = document.getElementById('archify-trace-data');
+      var payload = null;
+      if (element) {
+        try {
+          var parsed = JSON.parse(element.textContent || 'null');
+          if (parsed && typeof parsed === 'object') payload = parsed;
+        } catch (_) {}
+      }
+      var viewpoint = payload && payload.viewpoint && typeof payload.viewpoint === 'object' ? payload.viewpoint : null;
+      var trace = payload && payload.trace && typeof payload.trace === 'object' ? payload.trace : null;
+      var links = trace && Array.isArray(trace.drills_into) ? trace.drills_into.filter(function (link) {
+        return link && typeof link.node === 'string' && typeof link.target === 'string' &&
+          /^[^/:?#\\][^:?#\\]*[.][Hh][Tt][Mm][Ll]$/.test(link.target) && link.target.split('/').indexOf('..') < 0;
+      }) : [];
+      var chip = document.getElementById('viewpoint-chip');
+      if (chip && viewpoint) {
+        var parts = [];
+        if (viewpoint.level) parts.push(viewerText('viewer.viewpoint.level.' + viewpoint.level));
+        if (viewpoint.concern) parts.push(viewerText('viewer.viewpoint.concern.' + viewpoint.concern.replace(/-([a-z])/g, function (_, c) { return c.toUpperCase(); })));
+        if (viewpoint.c4_level) parts.push(viewerText('viewer.viewpoint.c4.' + viewpoint.c4_level));
+        if (viewpoint.status) parts.push(viewerText('viewer.viewpoint.status.' + viewpoint.status));
+        chip.textContent = parts.join(' · ');
+        chip.hidden = !parts.length;
+      }
+      return {
+        viewpoint: function () { return viewpoint; },
+        id: function () { return trace && typeof trace.id === 'string' ? trace.id : null; },
+        node: function (id) {
+          return links.filter(function (link) { return link.node === id; }).map(function (link) {
+            return { target: link.target, focus: link.focus || null, label: link.label || null };
+          });
         }
       };
     })();

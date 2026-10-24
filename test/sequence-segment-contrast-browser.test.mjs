@@ -50,7 +50,7 @@ test('sequence phase headings retain readable contrast in Read and Full detail',
   await run('Archify.readerLayout.whenStable()');
   for (const mode of ['read', 'full']) {
     if (mode === 'full') await run('for (let i = 0; i < 3; i++) Archify.view.zoomIn()');
-    for (const preset of ['classic', 'signal-flow', 'blueprint', 'editorial']) {
+    for (const preset of ['classic', 'signal-flow', 'blueprint', 'editorial', 'reference']) {
       for (const theme of ['light', 'dark']) {
         await t.test(`${preset} ${theme} ${mode} phase heading has at least 4.5:1 contrast`, async () => {
           await run(`document.documentElement.setAttribute('data-theme', ${JSON.stringify(theme)});
