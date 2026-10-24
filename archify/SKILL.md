@@ -72,6 +72,8 @@ Before the first candidate, use the authoring references and relevant repository
 
 When choosing among native diagram types is ambiguous, run `node bin/archify.mjs guide "<scenario>" --json`. Scenario proof examples are structural references, not facts to copy.
 
+When the user names a role (system analyst, architect, software designer), a design document (BRD, SRS, SAD, SDD, ADR), C4, or several related diagrams at different levels of detail, read [Engineering viewpoints](references/sdd-viewpoints.md). Set `meta.viewpoint` and `meta.trace` on each diagram, draw each C4 level as its own diagram linked by `drills_into`, and group them with `archify pack`.
+
 For an everyday subject, keep the same diagram modes and semantic types, then name them for the reader: use everyday `icon` values and `meta.legend` labels as in [Node icons](references/authoring-contract.md#node-icons). Ask for missing personal facts instead of inventing dates, amounts, or rules.
 
 ## Mermaid input

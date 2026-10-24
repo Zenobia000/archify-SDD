@@ -1,0 +1,118 @@
+# Engineering viewpoints and document packs
+
+Read this when the user names a role (business analyst, system analyst,
+architect, software designer), a design document (BRD, SRS, SAD, SDD, ADR),
+C4, or asks for several related diagrams at different levels of detail.
+
+## Viewpoint matrix
+
+Each viewpoint is a native diagram type with a fixed purpose. Rows are the
+abstraction level, columns the concern.
+
+| Level \ Concern | Data | Behavior | Structure |
+|---|---|---|---|
+| `business` | Business data flow → `dataflow` | Business process → `workflow` | System context, C4 L1 → `architecture` |
+| `system` | DFD level 1 → `dataflow` | Activity diagram → `workflow` | Containers, C4 L2 → `architecture` |
+| `implementation` | Schema ER → `erd` | Sequence → `sequence` | Components, C4 L3 → `architecture` |
+
+Outside the matrix:
+
+| Viewpoint | Type | Meta |
+|---|---|---|
+| State machine of one business object | `lifecycle` | `level: system`, `concern: behavior` |
+| Deployment | `architecture` | `c4_level: deployment` |
+| Code structure, C4 L4 | `class` | `c4_level: code` |
+| Module decomposition | `tree` | `level: implementation`, `concern: structure` |
+| Architecture decision record | `explainer` | pack `viewpoint.concern: cross-cutting` |
+
+`node bin/archify.mjs guide --role <role> --json` lists the documents and
+viewpoints a role owns; `--document SAD` lists one document. Add a scenario to
+get one recommendation.
+
+## Roles and documents
+
+| Document | Owner roles | Typical sections |
+|---|---|---|
+| BRD | business analyst, system analyst | business process, business data flow |
+| SRS | system analyst | activity diagrams, DFD, externally visible states |
+| SAD | architect | system context, containers, deployment, cross-cutting concerns |
+| SDD | software designer, developer | components, sequences, schema, state machines, modules, code structure |
+| ADR | architect | one decision with context, options and consequences |
+
+## Viewpoint and trace metadata
+
+Every native diagram may declare where it sits and how it relates to others:
+
+```json
+"meta": {
+  "viewpoint": { "level": "system", "concern": "structure", "c4_level": "container", "roles": ["architect"], "status": "current" },
+  "trace": {
+    "id": "c4-l2-containers",
+    "refines": ["c4-l1-context"],
+    "drills_into": [{ "node": "booking-api", "target": "c4-l3-booking-api.html", "focus": "booking-service", "label": "Booking API components" }],
+    "elements": { "booking-api": "C-20", "booking-db": "C-30" }
+  }
+}
+```
+
+- `trace.id` is the diagram's stable ID and must equal its pack artifact ID.
+- `refines` points to more abstract diagrams only: a DFD refines the business
+  data flow, a sequence refines an activity, L3 refines L2.
+- `drills_into` adds a link to the node's detail panel. `target` is the sibling
+  artifact's output file; `focus` opens it on a node.
+- `elements` maps node IDs to stable element IDs (`C-20`, `OP-10`) so one
+  element can be followed across diagrams. Declare each ID once in the pack.
+- `status` separates what exists (`current`) from what is partly built
+  (`partial`) or planned (`target`). Never mark planned work as current.
+
+Document membership and section numbers belong in the pack, not in diagrams.
+
+## C4 with native architecture fields
+
+| C4 element | Archify authoring |
+|---|---|
+| Person | `type: external`, `icon: person` |
+| Software system in scope | `type: backend` at L1; becomes a `region` boundary at L2 |
+| External software system | `type: external` |
+| Container (app, API, worker) | `frontend`, `backend`, or `messagebus`; technology in `sublabel` |
+| Container (database, store) | `database` |
+| System or container boundary | `boundaries[].kind: region`, label `Name [Software System]` or `Name [Container]` |
+| Deployment node or network | nested `region` boundaries; trust zones as `security-group` |
+
+Label every relationship with intent and protocol (`Books visit · HTTPS/JSON`).
+Use `variant: emphasis` for the main runtime path, `dashed` for asynchronous or
+feedback flows, and `security` for cross-cutting control such as identity.
+Name the legend entries for C4 roles through `meta.legend.entries`, for example
+`external` as `Person / external system`.
+
+Keep each level honest: L1 shows one box for the system, L2 shows no classes,
+L3 stays inside one container. Draw the next level as a new diagram and link
+it with `drills_into` instead of nesting detail.
+
+## Document packs
+
+A pack groups the diagrams of one system into documents:
+
+```json
+{
+  "schema_version": 1, "pack_type": "document-pack", "id": "careslot", "title": "CareSlot design documents",
+  "documents": [{ "id": "SAD", "kind": "SAD", "title": "Software Architecture Document",
+    "sections": [{ "id": "SAD-2", "title": "System context", "artifacts": ["c4-l1-context"] }] }],
+  "artifacts": [{ "id": "c4-l1-context", "type": "architecture", "source": "sources/c4-l1-context.architecture.json" }],
+  "elements": [{ "id": "C-20", "label": "Booking API", "status": "current" }]
+}
+```
+
+Author and `finalize` each diagram on its own first. Then run:
+
+```bash
+node bin/archify.mjs pack validate <name>.pack.json --json
+node bin/archify.mjs pack render <name>.pack.json --out <dir> --quality showcase --json
+```
+
+`render` writes every artifact, `pack.manifest.json`, and an `index.html` with
+the viewpoint matrix, documents, refinement hierarchy, and traceability table
+into one directory, so drill-down links resolve as siblings. Repair pack
+diagnostics (`pack/missing-artifact`, `pack/refines-cycle`,
+`pack/orphan-element`, `pack/trace-id-mismatch`) in the sources, not in the
+rendered output. Report the index page link, not each diagram.

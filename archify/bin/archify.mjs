@@ -2202,7 +2202,8 @@ const COMMAND_USAGE = {
   check: '<output.html> [--json] [--require-provenance]',
   'browser-check': '<output.html> [--json|--summary] [--require-provenance] [--out-dir <dir>]',
   'visual-check': '<output.html> [--json|--summary] [--require-provenance] [--out-dir <dir>]',
-  guide: '[scenario or question] [--json] [--lang en|zh]',
+  guide: '[scenario or question] [--json] [--lang en|zh] [--role <role>] [--document BRD|SRS|SAD|SDD|ADR]',
+  pack: ['validate <document.pack.json> [--json]', 'render <document.pack.json> [--out <dir>] [--json] [--quality standard|showcase]'],
   brands: ['[name, alias, domain, or category] [--json]', 'capture <url> [--json]'],
   examples: '',
   doctor: '',
@@ -6193,11 +6194,20 @@ async function commandDoctor(args) {
 async function commandGuide(args) {
   let lang;
   let json = false;
+  let role;
+  let document;
   const queryParts = [];
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
-    if (arg === '--json') {
+    const [flag, inline] = arg.startsWith('--') && arg.includes('=') ? [arg.slice(0, arg.indexOf('=')), arg.slice(arg.indexOf('=') + 1)] : [arg, undefined];
+    if (flag === '--role' || flag === '--document') {
+      const value = inline ?? args[index + 1];
+      if (inline === undefined) index += 1;
+      if (!value || value.startsWith('--')) fail(`${flag} requires a value.`);
+      if (flag === '--role') role = value;
+      else document = value.toUpperCase();
+    } else if (arg === '--json') {
       json = true;
     } else if (arg === '--lang') {
       const value = args[index + 1];
@@ -6223,7 +6233,28 @@ async function commandGuide(args) {
     fail(`Could not load the scenario recipe guide: ${error.message}`, 1);
   }
 
+  let viewpoints;
+  try {
+    viewpoints = await import(pathToFileURL(path.join(skillRoot, 'recipes/viewpoints.mjs')).href);
+  } catch (error) {
+    fail(`Could not load the viewpoint guide: ${error.message}`, 1);
+  }
+  if (role && !Object.hasOwn(viewpoints.ROLES, role)) fail(`--role must be one of: ${Object.keys(viewpoints.ROLES).join(', ')}.`);
+  if (document && !Object.hasOwn(viewpoints.DOCUMENTS, document)) fail(`--document must be one of: ${Object.keys(viewpoints.DOCUMENTS).join(', ')}.`);
+
   const query = queryParts.join(' ').trim();
+  // A role or document narrows the guide to engineering viewpoints: which
+  // documents that reader owns and which native diagrams belong in them.
+  if (role || document) {
+    const selectedLang = lang || (query ? guide.detectGuideLanguage(query) : 'en');
+    const listing = viewpoints.listViewpoints({ role, document, lang: selectedLang });
+    const result = query
+      ? { ...listing, mode: 'viewpoint-recommendation', query, ...(viewpoints.recommendViewpoint(query, { role, document, lang: selectedLang }) || { viewpoint: null }) }
+      : listing;
+    if (json) console.log(JSON.stringify(result, null, 2));
+    else console.log(query ? viewpoints.formatViewpointRecommendation(result) : viewpoints.formatViewpointList(result));
+    return;
+  }
   if (!query) {
     const selectedLang = lang || 'en';
     if (json) {
@@ -6240,7 +6271,61 @@ async function commandGuide(args) {
   }
 
   const result = guide.recommendScenario(query, lang ? { lang } : {});
-  console.log(json ? JSON.stringify(result, null, 2) : guide.formatScenarioRecommendation(result));
+  const viewpoint = viewpoints.recommendViewpoint(query, { lang: result.lang });
+  if (viewpoint && viewpoint.confidence === 'high') result.viewpoint = viewpoint;
+  const text = guide.formatScenarioRecommendation(result);
+  console.log(json ? JSON.stringify(result, null, 2) : result.viewpoint ? `${text}\n\n${viewpoints.formatViewpointRecommendation({ lang: result.lang, ...viewpoint })}` : text);
+}
+
+// A document pack groups related diagrams into design documents; see
+// references/sdd-viewpoints.md. render writes every artifact, a manifest and an
+// index page into one directory so drill-down links resolve as siblings.
+async function commandPack(args) {
+  const qualityArgs = extractQualityArgs(args);
+  let json = false;
+  let out;
+  const positional = [];
+  for (let index = 0; index < qualityArgs.rest.length; index += 1) {
+    const arg = qualityArgs.rest[index];
+    if (arg === '--json') json = true;
+    else if (arg === '--out') {
+      out = qualityArgs.rest[index + 1];
+      index += 1;
+      if (!out || out.startsWith('--')) fail('--out requires a directory.');
+    } else if (arg.startsWith('--out=')) out = arg.slice('--out='.length);
+    else if (arg.startsWith('--')) fail(`Unknown pack option "${arg}".`);
+    else positional.push(arg);
+  }
+  const [action, packPath] = positional;
+  if (!['validate', 'render'].includes(action) || !packPath || positional.length !== 2 || (action === 'validate' && (out || qualityArgs.quality))) {
+    fail(usage());
+  }
+  const { analyzePack, renderPack } = await import('../pack/document-pack.mjs');
+  const outDir = path.resolve(out || path.join(path.dirname(path.resolve(packPath)), 'artifacts'));
+  const result = action === 'validate'
+    ? analyzePack(packPath)
+    : renderPack(packPath, outDir, { quality: qualityArgs.quality });
+  const receipt = {
+    schemaVersion: 1,
+    ok: result.ok,
+    command: 'pack',
+    action,
+    pack: path.resolve(packPath),
+    ...(action === 'render' && result.outDir ? { outDir: result.outDir, index: path.join(result.outDir, 'index.html') } : {}),
+    artifacts: (result.artifacts || []).map((artifact) => ({
+      id: artifact.id,
+      type: artifact.type,
+      output: artifact.output,
+      ...(artifact.sha256 ? { sha256: artifact.sha256, check: artifact.check } : {}),
+    })),
+    diagnostics: result.diagnostics,
+  };
+  if (json) console.log(JSON.stringify(receipt, null, 2));
+  else {
+    for (const entry of result.diagnostics) console.error(`[${entry.code}] ${entry.message}`);
+    if (result.ok) console.log(action === 'render' ? receipt.index : `pack ok: ${receipt.artifacts.length} artifacts`);
+  }
+  if (!result.ok) process.exitCode = 1;
 }
 
 async function commandBrands(args) {
@@ -7263,6 +7348,9 @@ try {
       break;
     case 'guide':
       await commandGuide(args);
+      break;
+    case 'pack':
+      await commandPack(args);
       break;
     case 'brands':
       await commandBrands(args);

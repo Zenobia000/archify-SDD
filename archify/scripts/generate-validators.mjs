@@ -19,8 +19,12 @@ const ajv = new Ajv2020({
 });
 ajv.addSchema(JSON.parse(fs.readFileSync(path.join(schemasDir, 'common.schema.json'), 'utf8')));
 
+// Schemas that are not diagrams keep AJV's plain export: they have no
+// meta.output to check against the portable path contract.
+const documentTypes = ['pack'];
+
 const schemaIds = {};
-for (const type of diagramTypes) {
+for (const type of [...diagramTypes, ...documentTypes]) {
   const schema = JSON.parse(fs.readFileSync(path.join(schemasDir, `${type}.schema.json`), 'utf8'));
   ajv.addSchema(schema);
   schemaIds[type] = schema.$id;
@@ -45,6 +49,11 @@ if (!validatorCode.includes(ajvUcs2Import)) {
   throw new Error('AJV standalone output no longer contains the expected ucs2length helper');
 }
 validatorCode = validatorCode.replaceAll(ajvUcs2Import, inlineUcs2Length);
+for (const type of documentTypes) {
+  if (!new RegExp(`export const ${type} = validate\\d+;`).test(validatorCode)) {
+    throw new Error(`AJV standalone output no longer exports the ${type} validator as expected`);
+  }
+}
 if (validatorCode.includes('require(')) {
   throw new Error('AJV standalone output contains an unexpected runtime dependency');
 }

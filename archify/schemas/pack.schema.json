@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/tt-a1i/archify/schemas/pack.schema.json",
+  "title": "Archify Document Pack",
+  "description": "Groups related diagrams into design documents (BRD, SRS, SAD, SDD, ADR) and declares stable elements shared across them. Diagram-to-diagram relations live in each diagram's meta.trace.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "pack_type", "id", "title", "documents", "artifacts"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "pack_type": { "const": "document-pack" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "subtitle": { "type": "string", "minLength": 1, "maxLength": 400 },
+    "locale": { "$ref": "common.schema.json#/$defs/locale" },
+    "documents": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 24,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "sections"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Z][A-Z0-9-]{1,23}$" },
+          "kind": { "enum": ["BRD", "SRS", "SAD", "SDD", "ADR"] },
+          "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+          "summary": { "type": "string", "minLength": 1, "maxLength": 400 },
+          "sections": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 40,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "title", "artifacts"],
+              "properties": {
+                "id": { "type": "string", "pattern": "^[A-Z][A-Z0-9-]{1,23}-[0-9]{1,2}(\\.[0-9]{1,2})?$" },
+                "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+                "artifacts": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 16,
+                  "items": { "$ref": "common.schema.json#/$defs/id" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "type", "source"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/$defs/id" },
+          "type": { "enum": ["architecture", "workflow", "sequence", "dataflow", "lifecycle", "erd", "tree", "class", "timeline", "waterfall", "explainer"] },
+          "source": {
+            "description": "Path of the authored source, relative to the pack file.",
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[^/\\\\:]+(?:/[^/\\\\:]+)*[.](?:json|md)$",
+            "not": { "pattern": "(^|/)[.]{1,2}(/|$)" }
+          },
+          "output": { "$ref": "common.schema.json#/$defs/portableOutputPath" },
+          "viewpoint": { "$ref": "common.schema.json#/$defs/viewpoint" }
+        }
+      }
+    },
+    "elements": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/$defs/traceElementId" },
+          "label": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "owner": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "status": { "enum": ["current", "partial", "target"] }
+        }
+      }
+    }
+  }
+}
