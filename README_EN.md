@@ -1,4 +1,4 @@
-<p align="center"><strong>Archify-SDD</strong> is a community fork of <a href="https://github.com/tt-a1i/archify">Archify</a> by tt-a1i, extended for the SDLC document chain (BRD · SRS · SAD · SDD · ADR). <a href="#archify-sdd">Tribute, design logic and workflow ↓</a></p>
+<p align="center"><strong>Archify-SDD</strong> is a community fork of <a href="https://github.com/tt-a1i/archify">Archify</a> by tt-a1i, maintained by <a href="https://sunnydatascience.com">sunnyDataScience</a> and extended for the SDLC document chain (BRD · SRS · SAD · SDD · ADR). <a href="#archify-sdd">Tribute, design logic and workflow ↓</a></p>
 
 <p align="center">
   <picture>
@@ -52,7 +52,7 @@
 <a id="archify-sdd"></a>
 ## Archify-SDD: from business logic to engineering diagrams
 
-Archify-SDD is a community fork of [Archify](https://github.com/tt-a1i/archify), maintained independently by [Zenobia000](https://github.com/Zenobia000). It answers one question: **how do we get an agent to quickly break a piece of business logic apart and turn it into the diagrams an engineering team actually builds from?**
+Archify-SDD is a community fork of [Archify](https://github.com/tt-a1i/archify), maintained independently by [sunnyDataScience](https://sunnydatascience.com) (GitHub: [Zenobia000](https://github.com/Zenobia000)). It answers one question: **how do we get an agent to quickly break a piece of business logic apart and turn it into the diagrams an engineering team actually builds from?**
 
 If your job is to turn one sentence of business need into a set of diagrams that analysts, architects, designers and developers can each read — and that line up with one another — this version is for you. Use it, poke at it, send a PR. Full story in Traditional Chinese: [繁體中文](./README_ZH-TW.md).
 
@@ -65,6 +65,8 @@ If your job is to turn one sentence of business need into a set of diagrams that
 The sponsors, official channels, install counts and star history on this page describe the upstream project, not this fork.
 
 ### Design logic: the SDLC document chain, drawn
+
+sunnyDataScience's answer is to reuse a structure the industry already agrees on instead of inventing a new one.
 
 Archify draws one thing well. Archify-SDD adds the next question: **who is this diagram for, which document does it belong to, and how does it connect to the one above it?**
 
@@ -129,10 +131,10 @@ This fork's Skill has the same name as upstream's (`archify`), so **install eith
 
 ### Fork and maintenance
 
-- **Independently maintained.** Free divergence; the direction is set here and is not guaranteed to track upstream.
+- **Independently maintained** by sunnyDataScience. Free divergence; the direction is set here and is not guaranteed to track upstream.
 - **Upstream, selectively.** An `upstream` remote is kept; valuable upstream fixes (renderer, viewer, security) are reviewed and merged.
 - **Reporting.** Issues in this layer (viewpoints, traceability, packs, the Architecture Center, the Traditional Chinese UI) belong in this repository. Core rendering issues: check whether they reproduce upstream first.
-- **License.** MIT. `LICENSE` keeps the tt-a1i (Archify) and Cocoon AI notices.
+- **License.** MIT. `LICENSE` adds a sunnyDataScience (Archify-SDD) line and keeps the tt-a1i (Archify) and Cocoon AI notices.
 
 ### What this fork adds
 

@@ -20,7 +20,7 @@
   <a href="#fork"><strong>Fork 與維護</strong></a>
 </p>
 
-Archify-SDD 是 [Archify](https://github.com/tt-a1i/archify) 的社群 fork，由 [Zenobia000](https://github.com/Zenobia000) 獨立維護。
+Archify-SDD 是 [Archify](https://github.com/tt-a1i/archify) 的社群 fork，由 [sunnyDataScience](https://sunnydatascience.com)（GitHub 帳號：[Zenobia000](https://github.com/Zenobia000)）獨立維護。
 
 它只回答一個問題：**怎麼讓 agent 快速把一段業務邏輯拆開，轉成工程團隊真的會拿來開發的圖？**
 
@@ -38,6 +38,8 @@ Archify-SDD 站在別人的肩膀上，這點要先說清楚。
 
 <a id="sdlc"></a>
 ## 設計理念：把 SDLC 的文件鏈變成圖
+
+sunnyDataScience 的做法，是沿用業界早已有共識的結構，而不是另創一套。
 
 Archify 擅長「把一件事畫成一張可互動的圖」。Archify-SDD 往前多走一步：**這張圖是給誰看的、屬於哪一份文件、跟上一層的圖怎麼接。**
 
@@ -117,10 +119,10 @@ npx skills add Zenobia000/archify-SDD -g
 <a id="fork"></a>
 ## Fork 與維護
 
-- **獨立維護。** 這個 fork 自由分岔，路線由維護者決定，不保證與上游同步。
+- **由 sunnyDataScience 獨立維護。** 這個 fork 自由分岔，路線由維護者決定，不保證與上游同步。
 - **選擇性取回上游。** 保留 `upstream` remote，上游有價值的修正（渲染器、viewer、安全性）會評估後合入。
 - **問題回報。** 屬於這一層的（視角、追溯、文件包、Architecture Center、繁體中文介面）請開 issue 到本 repo。屬於核心渲染的問題，請先在上游確認是否也會重現。
-- **授權。** MIT。`LICENSE` 保留 tt-a1i（Archify）與 Cocoon AI 的版權聲明，不得移除。
+- **授權。** MIT。`LICENSE` 新增一行 sunnyDataScience（Archify-SDD），並保留 tt-a1i（Archify）與 Cocoon AI 的版權聲明，不得移除。
 - **貢獻。** 見 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 這個 fork 新增了什麼
