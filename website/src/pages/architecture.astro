@@ -1,0 +1,190 @@
+---
+import { versioned } from '../data/site';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import Navigation from '../components/Navigation.astro';
+import head from '../data/architecture-head.html?raw';
+import css from '../styles/architecture.css?raw';
+import pageScript from '../scripts/architecture.js?raw';
+import {
+  C4_LABELS, CONCERNS, CONCERN_LABELS, LEVELS, LEVEL_LABELS, PACKS, TYPE_LABELS,
+  artifactPage, catalog, documents, exampleFor, packPage, roles, viewpoints,
+} from '../data/architecture-center.mjs';
+const { lang = 'en' } = Astro.props as { lang?: 'en' | 'zh' };
+const t = (en: string, zh: string) => ({ 'data-en': en, 'data-zh': zh });
+const matrixViewpoint = (level: string, concern: string) => viewpoints.find((entry) => entry.matrix && entry.level === level && entry.concern === concern);
+const extras = viewpoints.filter((entry) => !entry.matrix);
+const facetValues = {
+  role: roles.map((role) => [role.id, role.label.en, role.label.zh]),
+  document: documents.map((doc) => [doc.id, doc.id, doc.id]),
+  level: LEVELS.map((level) => [level, LEVEL_LABELS[level].en, LEVEL_LABELS[level].zh]),
+  concern: [...CONCERNS, 'cross-cutting'].map((concern) => [concern, CONCERN_LABELS[concern].en, CONCERN_LABELS[concern].zh]),
+  type: [...new Set(catalog.map((entry) => entry.type))].map((type) => [type, TYPE_LABELS[type].en, TYPE_LABELS[type].zh]),
+};
+const facetTitles: Record<string, { 'data-en': string; 'data-zh': string }> = {
+  role: t('Role', '角色'), document: t('Document', '文档'), level: t('Abstraction level', '抽象层级'),
+  concern: t('Concern', '关注点'), type: t('Diagram type', '图表类型'),
+};
+---
+<SiteLayout page="architecture" lang={lang} head={versioned(head)} css={css}>
+  <Navigation page="architecture" />
+  <main class="ac">
+    <section class="ac-hero">
+      <div class="ac-shell">
+        <p class="ac-crumbs"><a href="./" {...t('Archify', 'Archify')}>Archify</a> › <span {...t('Architecture Center', '架构中心')}>Architecture Center</span></p>
+        <h1 {...t('Architecture Center', '架构中心')}>Architecture Center</h1>
+        <p class="ac-lede" {...t('Diagrams for design documents. Pick your role or the document you are writing, see which diagrams belong in it, and follow each one from the business view down to schema and code.', '设计文档里的图。选择你的角色或正在撰写的文档，查看其中应有哪些图，并从业务视图一路追到数据表与代码。')}>Diagrams for design documents. Pick your role or the document you are writing, see which diagrams belong in it, and follow each one from the business view down to schema and code.</p>
+        <div class="ac-actions">
+          {PACKS[0] && <a class="ac-button primary" href={packPage(PACKS[0])} {...t('Open the reference pack', '打开参考文档包')}>Open the reference pack</a>}
+          <a class="ac-button" href="#catalog" {...t('Browse the catalog', '浏览目录')}>Browse the catalog</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="ac-section" id="roles" aria-labelledby="roles-title">
+      <div class="ac-shell">
+        <h2 id="roles-title" {...t('Browse by role', '按角色浏览')}>Browse by role</h2>
+        <div class="ac-grid roles">
+          {roles.filter((role) => role.viewpoints.length).map((role) => (
+            <a class="ac-card role-card" href={`architecture.html?role=${role.id}#catalog`} data-role-link={role.id}>
+              <strong {...t(role.label.en, role.label.zh)}>{role.label.en}</strong>
+              <span class="ac-meta">{role.documents.join(' · ')}</span>
+              <span class="ac-count" {...t(`${role.viewpoints.length} ${role.viewpoints.length === 1 ? 'viewpoint' : 'viewpoints'}`, `${role.viewpoints.length} 个视角`)}>{role.viewpoints.length} {role.viewpoints.length === 1 ? 'viewpoint' : 'viewpoints'}</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="ac-section alt" id="matrix" aria-labelledby="matrix-title">
+      <div class="ac-shell">
+        <h2 id="matrix-title" {...t('Viewpoint matrix', '视角矩阵')}>Viewpoint matrix</h2>
+        <p class="ac-intro" {...t('Rows are abstraction levels, columns are what the diagram is about. Each cell is one native Archify diagram type with a fixed purpose.', '行是抽象层级，列是图所关注的主题。每一格对应一种 Archify 原生图表与固定用途。')}>Rows are abstraction levels, columns are what the diagram is about. Each cell is one native Archify diagram type with a fixed purpose.</p>
+        <div class="ac-table-wrap">
+          <table class="ac-matrix">
+            <thead><tr><th scope="col"><span class="sr-only">Level</span></th>{CONCERNS.map((concern) => <th scope="col" {...t(CONCERN_LABELS[concern].en, CONCERN_LABELS[concern].zh)}>{CONCERN_LABELS[concern].en}</th>)}</tr></thead>
+            <tbody>
+              {LEVELS.map((level) => (
+                <tr>
+                  <th scope="row" {...t(LEVEL_LABELS[level].en, LEVEL_LABELS[level].zh)}>{LEVEL_LABELS[level].en}</th>
+                  {CONCERNS.map((concern) => {
+                    const entry = matrixViewpoint(level, concern);
+                    const example = entry && exampleFor(entry.id);
+                    return entry && (
+                      <td>
+                        <span class="ac-chip">{TYPE_LABELS[entry.type].en}{entry.c4_level ? ` · ${C4_LABELS[entry.c4_level]}` : ''}</span>
+                        <strong {...t(entry.title, entry.zh.title)}>{entry.title}</strong>
+                        <p {...t(entry.question, entry.zh.question)}>{entry.question}</p>
+                        <span class="ac-meta">{entry.documents.join(' · ')}</span>
+                        {example && <a class="ac-link" href={artifactPage(example.pack, example.artifact)} {...t('See example →', '查看范例 →')}>See example →</a>}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <h3 {...t('Outside the matrix', '矩阵之外')}>Outside the matrix</h3>
+        <div class="ac-grid extras">
+          {extras.map((entry) => {
+            const example = exampleFor(entry.id);
+            return (
+              <div class="ac-card">
+                <span class="ac-chip">{TYPE_LABELS[entry.type].en}{entry.c4_level ? ` · ${C4_LABELS[entry.c4_level]}` : ''}</span>
+                <strong {...t(entry.title, entry.zh.title)}>{entry.title}</strong>
+                <p {...t(entry.question, entry.zh.question)}>{entry.question}</p>
+                {example && <a class="ac-link" href={artifactPage(example.pack, example.artifact)} {...t('See example →', '查看范例 →')}>See example →</a>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+
+    <section class="ac-section" id="documents" aria-labelledby="documents-title">
+      <div class="ac-shell">
+        <h2 id="documents-title" {...t('Design documents', '设计文档')}>Design documents</h2>
+        <div class="ac-grid docs">
+          {documents.map((doc) => (
+            <div class="ac-card doc-card">
+              <span class="ac-doc-id">{doc.id}</span>
+              <strong {...t(doc.en.title, doc.zh.title)}>{doc.en.title}</strong>
+              <p {...t(doc.en.purpose, doc.zh.purpose)}>{doc.en.purpose}</p>
+              <ul>
+                {doc.viewpoints.map((id) => viewpoints.find((item) => item.id === id)).filter((entry) => entry !== undefined).map((entry) => <li {...t(entry.title, entry.zh.title)}>{entry.title}</li>)}
+              </ul>
+              <a class="ac-link" href={`architecture.html?document=${doc.id}#catalog`} {...t('Diagrams in this document →', '查看此文档的图 →')}>Diagrams in this document →</a>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="ac-section alt" id="packs" aria-labelledby="packs-title">
+      <div class="ac-shell">
+        <h2 id="packs-title" {...t('Reference document packs', '参考文档包')}>Reference document packs</h2>
+        <div class="ac-grid packs">
+          {PACKS.map((pack) => (
+            <a class="ac-card pack-card" href={packPage(pack)}>
+              <span class="ac-chip" {...t('Fictional reference', '虚构参考案例')}>Fictional reference</span>
+              <strong>{pack.title}</strong>
+              <p>{pack.subtitle}</p>
+              <span class="ac-meta">{pack.documents.map((doc) => doc.id).join(' · ')}</span>
+              <span class="ac-count" {...t(`${pack.artifacts.length} diagrams · ${pack.elements.length} traced elements`, `${pack.artifacts.length} 张图 · ${pack.elements.length} 个追溯元素`)}>{pack.artifacts.length} diagrams · {pack.elements.length} traced elements</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="ac-section" id="catalog" aria-labelledby="catalog-title">
+      <div class="ac-shell ac-catalog">
+        <aside class="ac-facets" aria-label="Filters">
+          <div class="ac-facets-head">
+            <strong {...t('Filter', '筛选')}>Filter</strong>
+            <button type="button" class="ac-clear" data-facet-clear {...t('Clear all', '全部清除')}>Clear all</button>
+          </div>
+          {Object.entries(facetValues).map(([facet, values]) => (
+            <fieldset class="ac-facet">
+              <legend {...facetTitles[facet]}>{facetTitles[facet]['data-en']}</legend>
+              {values.map(([value, en, zh]) => (
+                <label><input type="checkbox" data-facet={facet} value={value} /> <span {...t(en, zh)}>{en}</span></label>
+              ))}
+            </fieldset>
+          ))}
+        </aside>
+        <div class="ac-results">
+          <h2 id="catalog-title" {...t('Catalog', '目录')}>Catalog</h2>
+          <p class="ac-status" data-catalog-status aria-live="polite"></p>
+          <div class="ac-grid results">
+            {catalog.map((entry) => {
+              const sections = entry.artifact.documents.map((doc) => doc.section).join(', ');
+              return (
+                <a class="ac-card result-card" href={artifactPage(entry.pack, entry.artifact)}
+                   data-role={entry.roles.join(' ')} data-document={entry.documents.join(' ')}
+                   data-level={entry.level || ''} data-concern={entry.concern || ''} data-type={entry.type}>
+                  <span class="ac-chip">{TYPE_LABELS[entry.type].en}{entry.artifact.viewpoint?.c4_level ? ` · ${C4_LABELS[entry.artifact.viewpoint.c4_level]}` : ''}</span>
+                  <strong>{entry.artifact.title}</strong>
+                  {entry.viewpoint && <p {...t(entry.viewpoint.question, entry.viewpoint.zh.question)}>{entry.viewpoint.question}</p>}
+                  <span class="ac-meta">{entry.pack.title} · {sections}</span>
+                </a>
+              );
+            })}
+          </div>
+          <p class="ac-empty" data-catalog-empty hidden {...t('No diagrams match these filters.', '没有符合筛选条件的图。')}>No diagrams match these filters.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="ac-section alt" id="create" aria-labelledby="create-title">
+      <div class="ac-shell">
+        <h2 id="create-title" {...t('Create your own', '为自己的系统生成')}>Create your own</h2>
+        <p class="ac-intro" {...t('Ask your agent which diagrams your role owns, then draw each one and group them into a pack.', '先让 Agent 列出你的角色负责哪些图，再逐一绘制并组成文档包。')}>Ask your agent which diagrams your role owns, then draw each one and group them into a pack.</p>
+        <pre class="ac-code"><code>archify guide --role architect
+archify guide --document SDD "sequence for the checkout flow"
+archify pack render my-system.pack.json --out site/</code></pre>
+      </div>
+    </section>
+  </main>
+  <script is:inline set:html={pageScript}></script>
+</SiteLayout>

@@ -1,0 +1,134 @@
+---
+import type { Pack, PackArtifact } from '../../data/pack-types';
+import { versioned } from '../../data/site';
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import Navigation from '../../components/Navigation.astro';
+import RefinementTree from '../../components/RefinementTree.astro';
+import head from '../../data/packs-head.html?raw';
+import css from '../../styles/architecture.css?raw';
+import {
+  C4_LABELS, CONCERNS, CONCERN_LABELS, LEVELS, LEVEL_LABELS, TYPE_LABELS,
+  artifactPage, cellArtifacts, packRoutes, refinementTree,
+} from '../../data/architecture-center.mjs';
+
+export function getStaticPaths() { return packRoutes(); }
+interface Props { pack: Pack; lang?: 'en' | 'zh' }
+const { pack, lang = 'en' } = Astro.props as Props;
+const t = (en: string, zh: string) => ({ 'data-en': en, 'data-zh': zh });
+const byId = new Map<string, PackArtifact>(pack.artifacts.map((artifact: PackArtifact) => [artifact.id, artifact]));
+const placed = new Set(LEVELS.flatMap((level) => CONCERNS.flatMap((concern) => cellArtifacts(pack, level, concern).map((artifact) => artifact.id))));
+const others = pack.artifacts.filter((artifact: PackArtifact) => !placed.has(artifact.id));
+const chip = (artifact: PackArtifact) => `${TYPE_LABELS[artifact.type].en}${artifact.viewpoint?.c4_level ? ` · ${C4_LABELS[artifact.viewpoint.c4_level]}` : ''}`;
+---
+<SiteLayout page={`packs/${pack.id}`} lang={lang} head={versioned(head)} css={css}>
+  <Navigation page={`packs/${pack.id}`} />
+  <main class="ac">
+    <section class="ac-hero">
+      <div class="ac-shell">
+        <p class="ac-crumbs"><a href="architecture.html" {...t('Architecture Center', '架构中心')}>Architecture Center</a> › <a href="architecture.html#packs" {...t('Document packs', '文档包')}>Document packs</a> › <span>{pack.title}</span></p>
+        <h1>{pack.title}</h1>
+        {pack.subtitle && <p class="ac-lede">{pack.subtitle}</p>}
+        <div class="ac-stats">
+          <div><strong>{pack.documents.length}</strong><span {...t('documents', '份文档')}>documents</span></div>
+          <div><strong>{pack.artifacts.length}</strong><span {...t('diagrams', '张图')}>diagrams</span></div>
+          <div><strong>{pack.elements.length}</strong><span {...t('traced elements', '个追溯元素')}>traced elements</span></div>
+          <div><strong>{pack.artifacts.filter((artifact) => artifact.check).length}/{pack.artifacts.length}</strong><span {...t('artifact checks passed', '项成品检查通过')}>artifact checks passed</span></div>
+        </div>
+        <div class="ac-actions">
+          <a class="ac-button" href={`packs/${pack.id}/artifacts/index.html`} {...t('Standalone pack index', '独立文档包索引')}>Standalone pack index</a>
+          <a class="ac-button" href={`packs/${pack.id}/${pack.id}.pack.json`} {...t('Pack manifest (JSON)', '文档包清单（JSON）')}>Pack manifest (JSON)</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="ac-section" aria-labelledby="pack-matrix">
+      <div class="ac-shell">
+        <h2 id="pack-matrix" {...t('Viewpoint matrix', '视角矩阵')}>Viewpoint matrix</h2>
+        <div class="ac-table-wrap">
+          <table class="ac-matrix">
+            <thead><tr><th scope="col"><span class="sr-only">Level</span></th>{CONCERNS.map((concern) => <th scope="col" {...t(CONCERN_LABELS[concern].en, CONCERN_LABELS[concern].zh)}>{CONCERN_LABELS[concern].en}</th>)}</tr></thead>
+            <tbody>
+              {LEVELS.map((level) => (
+                <tr>
+                  <th scope="row" {...t(LEVEL_LABELS[level].en, LEVEL_LABELS[level].zh)}>{LEVEL_LABELS[level].en}</th>
+                  {CONCERNS.map((concern) => {
+                    const items = cellArtifacts(pack, level, concern);
+                    return <td>{items.length ? items.map((artifact) => (
+                      <div><span class="ac-chip">{chip(artifact)}</span><a class="artifact-link" href={artifactPage(pack, artifact)}>{artifact.title}</a></div>
+                    )) : <span class="ac-empty-cell">—</span>}</td>;
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {others.length > 0 && <>
+          <h3 {...t('Outside the matrix', '矩阵之外')}>Outside the matrix</h3>
+          <div class="ac-grid">
+            {others.map((artifact) => (
+              <a class="ac-card" href={artifactPage(pack, artifact)}><span class="ac-chip">{chip(artifact)}</span><strong>{artifact.title}</strong></a>
+            ))}
+          </div>
+        </>}
+      </div>
+    </section>
+
+    <section class="ac-section alt" aria-labelledby="pack-docs">
+      <div class="ac-shell">
+        <h2 id="pack-docs" {...t('Documents', '文档')}>Documents</h2>
+        <div class="ac-docs">
+          {pack.documents.map((doc) => (
+            <div class="ac-doc">
+              <h3><span class="ac-doc-id">{doc.id}</span>{doc.title}</h3>
+              {doc.summary && <p>{doc.summary}</p>}
+              <ol>
+                {doc.sections.map((section) => (
+                  <li><span>{section.id}</span>{section.title}
+                    {section.artifacts.flatMap((id) => { const artifact = byId.get(id); return artifact ? [artifact] : []; }).map((artifact) => <a href={artifactPage(pack, artifact)}>{artifact.title}</a>)}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="ac-section" aria-labelledby="pack-tree">
+      <div class="ac-shell">
+        <h2 id="pack-tree" {...t('Refinement hierarchy', '细化层级')}>Refinement hierarchy</h2>
+        <p class="ac-intro" {...t('Each diagram sits under the more abstract diagram it refines: business views at the top, schema and code at the bottom.', '每张图都挂在它所细化的上层图之下：业务视图在最上，数据表与代码在最下。')}>Each diagram sits under the more abstract diagram it refines: business views at the top, schema and code at the bottom.</p>
+        <RefinementTree pack={pack} nodes={refinementTree(pack)} />
+      </div>
+    </section>
+
+    {pack.elements.length > 0 && (
+      <section class="ac-section alt" aria-labelledby="pack-trace">
+        <div class="ac-shell">
+          <h2 id="pack-trace" {...t('Traceability', '追溯矩阵')}>Traceability</h2>
+          <p class="ac-intro" {...t('Stable element IDs follow one process, container, component or entity across every diagram it appears on.', '稳定的元素 ID 让同一个流程、容器、组件或实体可以在它出现的每张图之间追溯。')}>Stable element IDs follow one process, container, component or entity across every diagram it appears on.</p>
+          <div class="ac-table-wrap">
+            <table class="ac-trace">
+              <thead><tr><th>ID</th><th {...t('Element', '元素')}>Element</th><th {...t('Owner', '负责方')}>Owner</th><th {...t('Status', '状态')}>Status</th><th {...t('Appears in', '出现于')}>Appears in</th></tr></thead>
+              <tbody>
+                {pack.elements.map((element) => (
+                  <tr>
+                    <td><code>{element.id}</code></td>
+                    <td>{element.label}</td>
+                    <td>{element.owner || ''}</td>
+                    <td>{element.status && <span class={`ac-status-badge ${element.status}`}>{element.status}</span>}</td>
+                    <td>{element.appearsIn.map((place, index) => {
+                      const artifact = byId.get(place.artifact);
+                      if (!artifact) return null;
+                      return <>{index > 0 && ', '}<a href={`${artifactPage(pack, artifact)}#focus=${encodeURIComponent(place.node)}`}>{artifact.title}</a></>;
+                    })}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    )}
+  </main>
+</SiteLayout>

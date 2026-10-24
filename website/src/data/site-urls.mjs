@@ -1,5 +1,7 @@
+import { packPages } from './pack-registry.mjs';
+
 export const canonicalOrigin = 'https://archify.si';
-export const sitePages = ['index', 'guide', 'start', 'gallery', 'community', 'agent-diagrams', 'cases/mco-runtime'];
+export const sitePages = ['index', 'architecture', 'guide', 'start', 'gallery', 'community', 'agent-diagrams', 'cases/mco-runtime', ...packPages];
 export function canonicalPath(page, lang = 'en') {
   return page === 'index' ? (lang === 'zh' ? '/zh' : '/') : `${lang === 'zh' ? '/zh/' : '/'}${page}`;
 }

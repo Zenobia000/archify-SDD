@@ -77,6 +77,12 @@ For rollback, disable the Cloudflare deployment variable and roll back to the la
 
 The migration visual receipt is in `test/evidence/visual-parity.json`. Full-page comparisons use identical browser/viewports and wait for fonts. Animation is frozen and iframe pixels are hidden in both versions; iframe files are instead verified byte-for-byte, and unmasked pages are inspected separately.
 
+That receipt proves the hosting migration changed no pixels; it is not a gate for later design work. The Architecture Center restyle (`src/styles/reference.css`, shared tokens in `src/styles/site.css`) intentionally changes every page's appearance, so its evidence is the website browser suite and reviewed screenshots rather than byte parity.
+
+## Architecture Center
+
+`architecture.html` and the `packs/` routes present the engineering viewpoint catalog (`archify/recipes/viewpoints.mjs`) and the reference document packs registered in `src/data/pack-registry.mjs`. Pack pages read the generated `docs/packs/<id>/artifacts/pack.manifest.json`; run `npm --prefix archify run build:packs` after changing a pack source, then rebuild the site. Diagram pages embed artifacts with `?embed=1&preset=reference`.
+
 ## Search and AI discovery
 
 The ten main language pages contain their translated body text, metadata and recipe references before JavaScript runs. Language links navigate to real URLs; URL language takes precedence over stored preferences. Existing `?lang=` entry links migrate to the matching route and preserve other parameters and fragments. Guide drafts survive a language switch once in session storage, expire after 30 seconds, and are never placed in the URL or sent over the network.

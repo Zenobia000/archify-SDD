@@ -1,0 +1,116 @@
+---
+import type { Pack, PackArtifact } from '../../../data/pack-types';
+import { versioned } from '../../../data/site';
+import SiteLayout from '../../../layouts/SiteLayout.astro';
+import Navigation from '../../../components/Navigation.astro';
+import head from '../../../data/packs-head.html?raw';
+import css from '../../../styles/architecture.css?raw';
+import {
+  C4_LABELS, CONCERN_LABELS, LEVEL_LABELS, ROLE_LABELS, TYPE_LABELS,
+  artifactFile, artifactPage, artifactRoutes, artifactSource, packPage, viewpointFor,
+} from '../../../data/architecture-center.mjs';
+
+export function getStaticPaths() { return artifactRoutes(); }
+interface Props { pack: Pack; artifact: PackArtifact; lang?: 'en' | 'zh' }
+const { pack, artifact, lang = 'en' } = Astro.props as Props;
+const t = (en: string, zh: string) => ({ 'data-en': en, 'data-zh': zh });
+const byId = new Map<string, PackArtifact>(pack.artifacts.map((item: PackArtifact) => [item.id, item]));
+const byOutput = new Map<string, PackArtifact>(pack.artifacts.map((item: PackArtifact) => [item.output, item]));
+const viewpoint = viewpointFor(artifact);
+const view = artifact.viewpoint || {};
+const roles = view.roles || viewpoint?.roles || [];
+const firstSection = artifact.documents[0];
+// Keep only relations that resolve inside this pack.
+const known = (ids: string[]) => ids.flatMap((id) => { const item = byId.get(id); return item ? [item] : []; });
+const parents = known(artifact.refines);
+const children = known(artifact.refinedBy);
+const drilledFrom = known(artifact.drilledFrom);
+const drills = artifact.drillsInto.flatMap((link) => { const target = byOutput.get(link.target); return target ? [{ link, target }] : []; });
+const elements = Object.entries(artifact.elements || {}).flatMap(([node, id]) => { const element = pack.elements.find((item) => item.id === id); return element ? [{ node, element }] : []; });
+const file = artifactFile(pack, artifact);
+---
+<SiteLayout page={`packs/${pack.id}/${artifact.id}`} lang={lang} head={versioned(head)} css={css}>
+  <Navigation page={`packs/${pack.id}/${artifact.id}`} />
+  <main class="ac">
+    <section class="ac-hero">
+      <div class="ac-shell">
+        <p class="ac-crumbs">
+          <a href="architecture.html" {...t('Architecture Center', '架构中心')}>Architecture Center</a> ›
+          <a href={packPage(pack)}>{pack.title}</a>
+          {firstSection && <> › <span>{firstSection.document} · {firstSection.title}</span></>}
+          › <span>{artifact.title}</span>
+        </p>
+        <h1>{artifact.title}</h1>
+        {viewpoint && <p class="ac-lede" {...t(viewpoint.question, viewpoint.zh.question)}>{viewpoint.question}</p>}
+      </div>
+    </section>
+    <section class="ac-section">
+      <div class="ac-shell ac-diagram">
+        <div class="ac-frame">
+          <iframe id="ac-artifact-frame" src={`${file}?embed=1&preset=reference&theme=light`} data-src-base={file} title={`${artifact.title} — live Archify diagram`} loading="eager"></iframe>
+        </div>
+        <aside class="ac-side">
+          <section>
+            <h2 {...t('Diagram', '图表')}>Diagram</h2>
+            <dl>
+              <dt {...t('Type', '类型')}>Type</dt><dd>{TYPE_LABELS[artifact.type].en}{view.c4_level ? ` · ${C4_LABELS[view.c4_level]}` : ''}</dd>
+              {view.level && <><dt {...t('Level', '层级')}>Level</dt><dd {...t(LEVEL_LABELS[view.level].en, LEVEL_LABELS[view.level].zh)}>{LEVEL_LABELS[view.level].en}</dd></>}
+              {view.concern && <><dt {...t('Concern', '关注点')}>Concern</dt><dd {...t(CONCERN_LABELS[view.concern].en, CONCERN_LABELS[view.concern].zh)}>{CONCERN_LABELS[view.concern].en}</dd></>}
+              {view.status && <><dt {...t('Status', '状态')}>Status</dt><dd><span class={`ac-status-badge ${view.status}`}>{view.status}</span></dd></>}
+              {roles.length > 0 && <><dt {...t('Roles', '角色')}>Roles</dt><dd>{roles.map((role: string) => ROLE_LABELS[role]?.en || role).join(', ')}</dd></>}
+            </dl>
+          </section>
+          <section>
+            <h2 {...t('In documents', '所属文档')}>In documents</h2>
+            <ul>{artifact.documents.map((doc) => <li><a href={`${packPage(pack)}#pack-docs`}>{doc.section} · {doc.title}</a></li>)}</ul>
+          </section>
+          <section>
+            <h2 {...t('Refines', '细化自')}>Refines</h2>
+            {parents.length ? <ul>{parents.map((item) => <li><a href={artifactPage(pack, item)}>↑ {item.title}</a></li>)}</ul> : <p class="ac-none" {...t('Top of the hierarchy.', '位于层级顶端。')}>Top of the hierarchy.</p>}
+            {children.length > 0 && <>
+              <h2 style="margin-top:.9rem" {...t('Refined by', '被细化为')}>Refined by</h2>
+              <ul>{children.map((item) => <li><a href={artifactPage(pack, item)}>↓ {item.title}</a></li>)}</ul>
+            </>}
+          </section>
+          {(drills.length > 0 || drilledFrom.length > 0) && (
+            <section>
+              <h2 {...t('Drill-down', '下钻')}>Drill-down</h2>
+              <ul>
+                {drills.map(({ link, target }) => <li><a href={`${artifactPage(pack, target)}${link.focus ? `#focus=${encodeURIComponent(link.focus)}` : ''}`}>{link.node} → {link.label || target.title}</a></li>)}
+                {drilledFrom.map((item) => <li><a href={artifactPage(pack, item)}>← {item.title}</a></li>)}
+              </ul>
+            </section>
+          )}
+          {elements.length > 0 && (
+            <section>
+              <h2 {...t('Traced elements', '追溯元素')}>Traced elements</h2>
+              <ul>{elements.map(({ node, element }) => <li><a href={`${artifactPage(pack, artifact)}#focus=${encodeURIComponent(node)}`} data-focus-node={node}><code>{element.id}</code> {element.label}</a></li>)}</ul>
+            </section>
+          )}
+          <section>
+            <h2 {...t('Files', '文件')}>Files</h2>
+            <ul>
+              <li><a href={file} target="_blank" rel="noopener" {...t('Open interactive diagram ↗', '打开交互式图表 ↗')}>Open interactive diagram ↗</a></li>
+              <li><a href={artifactSource(pack, artifact)} target="_blank" rel="noopener" {...t('Authored source ↗', '源文件 ↗')}>Authored source ↗</a></li>
+            </ul>
+            {viewpoint && <p class="ac-prompt" style="margin-top:.7rem"><code>archify guide --document {viewpoint.documents[0]} "{viewpoint.title.toLowerCase()}"</code></p>}
+          </section>
+        </aside>
+      </div>
+    </section>
+  </main>
+  <script is:inline>
+    (function () {
+      // Forward #focus=… on this page to the embedded diagram.
+      var frame = document.getElementById('ac-artifact-frame');
+      function sync() {
+        var hash = location.hash.indexOf('#focus=') === 0 ? location.hash : '';
+        var next = frame.getAttribute('data-src-base') + '?embed=1&preset=reference&theme=' + (document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light') + hash;
+        if (frame.getAttribute('src') !== next) frame.setAttribute('src', next);
+      }
+      window.addEventListener('hashchange', sync);
+      window.addEventListener('archify:themechange', sync);
+      sync();
+    })();
+  </script>
+</SiteLayout>

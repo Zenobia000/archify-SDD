@@ -43,7 +43,7 @@ test('built deployment uses host-compatible generated assets and canonical metad
     const nav = all.find(node => node.tagName === 'nav' && attr(node, 'class') === 'site-nav');
     const navLinks = nodes(nav).filter(node => node.tagName === 'a' && (attr(node, 'class') || '').split(/\s+/).includes('nav-link'));
     assert.deepEqual(navLinks.map(node => new URL(attr(node, 'href'), baseUri).href), [
-      ...['guide', 'gallery', 'start', 'community'].map(target => `${cloudflare ? 'https://archify.si/' : 'https://tt-a1i.github.io/archify/'}${lang === 'zh' ? 'zh/' : ''}${target}${cloudflare ? '' : '.html'}`),
+      ...['architecture', 'guide', 'gallery', 'start', 'community'].map(target => `${cloudflare ? 'https://archify.si/' : 'https://tt-a1i.github.io/archify/'}${lang === 'zh' ? 'zh/' : ''}${target}${cloudflare ? '' : '.html'}`),
       'https://github.com/tt-a1i/archify',
     ], `${file}: routes resolved against the actual document base`);
     const canonical = all.filter(node => node.tagName === 'link' && attr(node, 'rel') === 'canonical');

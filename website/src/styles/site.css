@@ -4,35 +4,38 @@
        Night-plate tokens; legacy token names stay so page sheets map onto them.
     ══════════════════════════════════════ */
     :root {
-      /* PALETTE — one design, two colour sets. Light is the default;
-         [data-theme="dark"] on <html> swaps every value below. Components only
-         read these tokens (rgb channels feed the translucent variants). */
-      --fg-rgb:18,20,23; --bg-rgb:245,246,243; --accent-rgb:226,80,14; --emerald-rgb:5,150,105; --signal-rgb:13,148,136; --glow-rgb:226,80,14;
-      --shadow-rgb:24,28,34; --shadow-k:.16;
-      --bg:#f5f6f3; --bg-2:#eef0ec; --surface:#ffffff; --surface-2:#f0f2ee; --sunken:#eceee9; --plate:#fbfbf9;
-      --text:#121417; --text-2:rgba(18,20,23,.68); --text-3:rgba(18,20,23,.62);
-      --line:rgba(18,20,23,.09); --line-hi:rgba(18,20,23,.16); --line-strong:rgba(18,20,23,.4);
-      --accent:#e2500e; --accent-text:#b83e08; --signal-text:#0f766e; --accent-hover:#c94408; --accent-soft:rgba(226,80,14,.09); --on-accent:#fff;
-      --btn-bg:#121417; --btn-fg:#ffffff; --btn-hover:#000000;
-      --title-top:#0b0c0e; --title-end:rgba(18,20,23,.72); --grad-a:#f08a4b; --grad-c:#d6264f; --glint:#e2500e;
-      --emerald:#059669; --signal:#0d9488; --rose:#e11d48; --violet:#7c3aed;
-      --hue-cyan:#0891b2; --hue-emerald:#059669; --hue-violet:#7c3aed; --hue-amber:#d97706; --hue-rose:#e11d48; --hue-orange:#ea580c; --hue-slate:#64748b; --hue-blue:#2563eb;
-      --star:#f5a524;
+      /* PALETTE — reference-architecture centre: white paper, navy chrome,
+         one blue accent. Light is the default; [data-theme="dark"] on <html>
+         swaps every value below. Legacy token names stay so page sheets map
+         onto them (rgb channels feed the translucent variants). */
+      --fg-rgb:22,25,31; --bg-rgb:255,255,255; --accent-rgb:9,114,211; --emerald-rgb:3,127,12; --signal-rgb:9,114,211; --glow-rgb:9,114,211;
+      --shadow-rgb:22,25,31; --shadow-k:.08;
+      --bg:#ffffff; --bg-2:#f2f3f3; --surface:#ffffff; --surface-2:#f8f8f8; --sunken:#f2f3f3; --plate:#fafafa;
+      --text:#16191f; --text-2:rgba(22,25,31,.74); --text-3:rgba(22,25,31,.64);
+      --line:#e9ebed; --line-hi:#d1d5db; --line-strong:#8d99a8;
+      --accent:#0972d3; --accent-text:#0757a8; --signal-text:#0757a8; --accent-hover:#065299; --accent-soft:rgba(9,114,211,.07); --on-accent:#fff;
+      --btn-bg:#232f3e; --btn-fg:#ffffff; --btn-hover:#16191f;
+      --title-top:#16191f; --title-end:#16191f; --grad-a:#0972d3; --grad-c:#0972d3; --glint:#0972d3;
+      --emerald:#037f0c; --signal:#0972d3; --rose:#d13212; --violet:#6b40b5;
+      --hue-cyan:#0972d3; --hue-emerald:#037f0c; --hue-violet:#6b40b5; --hue-amber:#8d6605; --hue-rose:#d13212; --hue-orange:#b5520a; --hue-slate:#5f6b7a; --hue-blue:#0972d3;
+      --star:#8d6605;
+      --navy:#232f3e; --navy-2:#16202d; --on-navy:#ffffff; --on-navy-2:#d1d5db;
       --lockup:url("assets/archify-lockup-light.svg");
       color-scheme:light;
     }
     :root[data-theme="dark"] {
-      --fg-rgb:238,241,243; --bg-rgb:7,8,10; --accent-rgb:255,106,43; --emerald-rgb:52,211,153; --signal-rgb:94,234,212; --glow-rgb:255,170,120;
-      --shadow-rgb:0,0,0; --shadow-k:1;
-      --bg:#07080a; --bg-2:#0b0d10; --surface:#0c0f13; --surface-2:#13171d; --sunken:#08090c; --plate:#0a0d12;
-      --text:#eef1f3; --text-2:rgba(238,241,243,.66); --text-3:rgba(238,241,243,.56);
-      --line:rgba(238,241,243,.08); --line-hi:rgba(238,241,243,.15); --line-strong:rgba(238,241,243,.38);
-      --accent:#ff6a2b; --accent-text:var(--accent); --signal-text:var(--signal); --accent-hover:#ff7d45; --accent-soft:rgba(255,106,43,.1); --on-accent:#fff;
-      --btn-bg:#eef1f3; --btn-fg:#0a0b0d; --btn-hover:#ffffff;
-      --title-top:#ffffff; --title-end:rgba(238,241,243,.7); --grad-a:#ffb38a; --grad-c:#ff3d6e; --glint:#ffffff;
-      --emerald:#34d399; --signal:#5eead4; --rose:#fb7185; --violet:#a78bfa;
-      --hue-cyan:#22d3ee; --hue-emerald:#34d399; --hue-violet:#a78bfa; --hue-amber:#fbbf24; --hue-rose:#fb7185; --hue-orange:#fb923c; --hue-slate:#94a3b8; --hue-blue:#60a5fa;
-      --star:#fbbf24;
+      --fg-rgb:233,235,237; --bg-rgb:15,27,42; --accent-rgb:83,159,229; --emerald-rgb:105,174,52; --signal-rgb:83,159,229; --glow-rgb:83,159,229;
+      --shadow-rgb:0,0,0; --shadow-k:.4;
+      --bg:#0f1b2a; --bg-2:#16202d; --surface:#16202d; --surface-2:#1b2736; --sunken:#0b1420; --plate:#131e2b;
+      --text:#e9ebed; --text-2:rgba(233,235,237,.76); --text-3:rgba(233,235,237,.64);
+      --line:#2a3644; --line-hi:#414d5c; --line-strong:#8d99a8;
+      --accent:#539fe5; --accent-text:#7ab4ec; --signal-text:#7ab4ec; --accent-hover:#7ab4ec; --accent-soft:rgba(83,159,229,.1); --on-accent:#0f1b2a;
+      --btn-bg:#e9ebed; --btn-fg:#0f1b2a; --btn-hover:#ffffff;
+      --title-top:#e9ebed; --title-end:#e9ebed; --grad-a:#539fe5; --grad-c:#539fe5; --glint:#539fe5;
+      --emerald:#69ae34; --signal:#539fe5; --rose:#ff7a7f; --violet:#b28bd8;
+      --hue-cyan:#539fe5; --hue-emerald:#69ae34; --hue-violet:#b28bd8; --hue-amber:#d9a43b; --hue-rose:#ff7a7f; --hue-orange:#f89256; --hue-slate:#8d99a8; --hue-blue:#539fe5;
+      --star:#d9a43b;
+      --navy:#0b1420; --navy-2:#060d16; --on-navy:#e9ebed; --on-navy-2:#b6bec9;
       --lockup:url("assets/archify-lockup-dark.svg");
       color-scheme:dark;
     }
@@ -41,10 +44,10 @@
       --ink:var(--text); --ink-site:var(--text); --ink-soft:rgba(var(--fg-rgb),.84);
       --muted:rgba(var(--fg-rgb),.62); --dim:rgba(var(--fg-rgb),.46);
       --accent-site:var(--accent);
-      --font-display:'Fraunces','Songti SC','STSong',Georgia,serif;
-      --font-title:'Space Grotesk','Inter',-apple-system,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+      --font-display:var(--font-body);
+      --font-title:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang TC','PingFang SC','Microsoft JhengHei','Microsoft YaHei',sans-serif;
       --font-grot:var(--font-title);
-      --font-body:'Inter',-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+      --font-body:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang TC','PingFang SC','Microsoft JhengHei','Microsoft YaHei',sans-serif;
       --font-mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
       --ease-out:cubic-bezier(.22,1,.36,1);
       --content:1320px;
@@ -52,8 +55,6 @@
     *,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
     html { scroll-behavior:smooth; scrollbar-gutter:stable; background:var(--bg); scrollbar-width:thin; scrollbar-color:rgba(var(--fg-rgb),.2) transparent; }
     body { font-family:var(--font-body); -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:clip; }
-    body::after { content:''; position:fixed; inset:0; z-index:1000; pointer-events:none; opacity:.035; mix-blend-mode:overlay;
-      background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='140' height='140' filter='url(%23n)'/></svg>"); }
     ::selection { background:rgba(var(--accent-rgb),.32); color:var(--on-accent); }
     a { color:inherit; }
     button, a { -webkit-tap-highlight-color:transparent; }
@@ -73,10 +74,9 @@
     .agent-guide-link a { color:var(--accent-text); font-weight:600; text-underline-offset:4px; }
     .agent-guide-link p { margin-top:.65rem; color:var(--text-2); line-height:1.7; }
 
-    /* page titles — grotesk statement, Fraunces italic accent */
-    h1 { background:linear-gradient(180deg,var(--title-top) 0%,var(--title-top) 55%,var(--title-end) 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
-    html[lang^="zh"] h1 em { font-family:inherit!important; font-style:normal!important; font-weight:600!important; }
-    h1 em { padding-right:.06em; background:linear-gradient(100deg,var(--grad-a) 0%,var(--accent) 45%,var(--grad-c) 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+    /* page titles — solid ink; emphasis is the accent colour, not a gradient */
+    h1 { color:var(--text); font-weight:600; letter-spacing:-.02em; }
+    h1 em { font-style:normal; color:var(--accent-text); }
 
     /* ══════════════════════════════════════
        NAVIGATION — one bar on every page. Desktop: brand · segmented links · actions.

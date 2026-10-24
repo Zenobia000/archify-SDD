@@ -150,12 +150,16 @@ export const CASES = [
 ];
 
 const TYPE_ACCENTS = {
-  architecture: '#0891b2',
-  workflow: '#047857',
-  sequence: '#6d28d9',
-  dataflow: '#b45309',
-  lifecycle: '#be123c',
-  erd: '#0f766e',
+  architecture: '#0972d3',
+  workflow: '#037f0c',
+  sequence: '#6b40b5',
+  dataflow: '#b5520a',
+  lifecycle: '#d13212',
+  erd: '#8d6605',
+  tree: '#5f6b7a',
+  class: '#6b40b5',
+  timeline: '#0972d3',
+  waterfall: '#b5520a',
 };
 
 function esc(value) {
@@ -186,7 +190,7 @@ export function renderCard(entry, index) {
             </header>
             <div class="preview-shell">
               <div class="live-flag">Live artifact</div>
-              <iframe src="${esc(artifact)}?embed=1&amp;theme=dark" data-src-base="${esc(artifact)}" title="${esc(entry.titleEn)} live Archify preview" loading="${entry.featured ? 'eager' : 'lazy'}"></iframe>
+              <iframe src="${esc(artifact)}?embed=1&amp;preset=reference&amp;theme=light" data-src-base="${esc(artifact)}" title="${esc(entry.titleEn)} live Archify preview" loading="${entry.featured ? 'eager' : 'lazy'}"></iframe>
             </div>
             <div class="card-body">
               <p class="card-description" data-en="${esc(entry.descriptionEn)}" data-zh="${esc(entry.descriptionZh)}">${esc(entry.descriptionEn)}</p>${engineeringProof}

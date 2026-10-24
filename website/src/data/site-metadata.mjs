@@ -1,4 +1,5 @@
 import { canonicalUrl, canonicalOrigin } from './site-urls.mjs';
+import { PACKS } from './pack-registry.mjs';
 const descriptions = {
   'cases/mco-runtime': {
     en: ['Archify MCO Runtime Case — Source-backed Architecture', 'Follow pinned MCO source to distinguish provider-output decoding, streamed answer writes and retained artifacts. Read the existing Archify diagram with explicit evidence limits.'],
@@ -7,6 +8,10 @@ const descriptions = {
   'agent-diagrams': {
     en: ['Archify Agent Diagramming Guide — Author, Review, Share', 'Create diagrams with Claude Code, Codex, Cursor and other coding agents. Learn bounded prompts, repository evidence, review checks and safe HTML sharing with Archify.'],
     zh: ['Archify Agent 画图指南 — 编写、检查与分享', '用 Claude Code、Codex、Cursor 等 Coding Agent 画图：从范围明确的提示词和仓库证据开始，检查事实、修改图表，再安全分享 Archify HTML 成品。'],
+  },
+  architecture: {
+    en: ['Archify Architecture Center — Diagrams for Design Documents', 'Choose diagrams by role and design document: business processes, DFD, C4 context, containers and components, sequences and schemas, linked from BRD and SRS down to SAD, SDD and ADR.'],
+    zh: ['Archify 架构中心 — 设计文档里的图', '按角色与设计文档选择图表：业务流程、DFD、C4 上下文/容器/组件、时序图与数据表，从 BRD、SRS 一路连到 SAD、SDD 与 ADR。'],
   },
   index: {
     en: ['Archify — AI Agent Skill for Interactive Diagrams and One-Page Answers', 'Archify is an MIT-licensed AI agent skill for validated HTML diagrams and conclusion-first one-page answers from descriptions or code, with interactive exploration, cited sources and browser export.'],
@@ -29,6 +34,21 @@ const descriptions = {
     zh: ['Archify 社区 — 基于 Archify 的独立包', '浏览基于 Archify 的独立社区包，包括技能、配方、主题、语言包与 CLI 封装，并查看源码、许可证、兼容性和验证证据。'],
   },
 };
+// Document pack pages take their titles from the generated pack manifests.
+for (const pack of PACKS) {
+  const summary = pack.subtitle || pack.title;
+  descriptions[`packs/${pack.id}`] = {
+    en: [`Archify — ${pack.title}`, `${summary} Browse its documents, viewpoint matrix, refinement hierarchy and traceability.`],
+    zh: [`Archify — ${pack.title}`, `${summary} 浏览它的文档、视角矩阵、细化层级与追溯矩阵。`],
+  };
+  for (const artifact of pack.artifacts) {
+    const where = artifact.documents.map((entry) => entry.section).join(', ');
+    descriptions[`packs/${pack.id}/${artifact.id}`] = {
+      en: [`Archify — ${artifact.title} · ${pack.title}`, `${artifact.title}${where ? ` (${where})` : ''} from the ${pack.title} reference pack, with the diagrams it refines and drills into.`],
+      zh: [`Archify — ${artifact.title} · ${pack.title}`, `${pack.title} 参考文档包中的「${artifact.title}」${where ? `（${where}）` : ''}，以及它所细化与下钻的图。`],
+    };
+  }
+}
 export function pageMetadata(page, lang, version) {
   const [title, description] = descriptions[page][lang];
   const canonical = canonicalUrl(page, lang);

@@ -1,0 +1,49 @@
+
+    /* ══════════════════════════════════════
+       REFERENCE LAYER — loaded after every page sheet. It keeps the site in
+       the reference-architecture register: navy chrome, flat 1px structure,
+       one blue accent, no glow, sweep, grain or entrance choreography.
+    ══════════════════════════════════════ */
+
+    /* navigation — a solid navy bar with flat links */
+    .site-nav, body.nav-scrolled .site-nav { background:var(--navy); border-bottom:1px solid rgba(255,255,255,.08); backdrop-filter:none; -webkit-backdrop-filter:none; }
+    .site-nav .brand-lockup { content:url("assets/archify-lockup-dark.svg"); }
+    .site-nav .nav-logo-path { border-color:rgba(255,255,255,.24); color:var(--on-navy-2); border-radius:3px; }
+    .site-nav .nav-links { border:0; background:none; border-radius:0; }
+    .site-nav .nav-link { border-radius:3px; color:var(--on-navy-2); }
+    .site-nav .nav-link:hover { color:var(--on-navy); background:rgba(255,255,255,.08); }
+    .site-nav .nav-link[aria-current="page"] { color:var(--on-navy); background:none; box-shadow:inset 0 -2px 0 var(--accent); border-radius:0; }
+    .site-nav .nav-link[aria-current="page"]::before { display:none; }
+    .site-nav .nav-stars { border-color:rgba(255,255,255,.2); background:none; color:var(--on-navy); }
+    .site-nav .btn-theme, .site-nav .btn-lang { border-color:rgba(255,255,255,.24); border-radius:3px; color:var(--on-navy-2); }
+    .site-nav .btn-theme:hover, .site-nav .btn-lang:hover { color:var(--on-navy); border-color:rgba(255,255,255,.5); }
+    .site-nav .nav-cta { border-radius:3px; border-color:var(--accent); background:var(--accent); color:#fff; }
+    .site-nav .nav-cta:hover { background:var(--accent-hover); border-color:var(--accent-hover); box-shadow:none; }
+    :root[data-theme="dark"] .site-nav .nav-cta { color:#0f1b2a; }
+    @media (max-width:960px) { .site-nav .nav-links { border-top-color:rgba(255,255,255,.12); } .site-nav .nav-link[aria-current="page"] { box-shadow:inset 0 -2px 0 var(--accent); } }
+
+    /* decoration that belongs to the old night-plate look */
+    .grid-bg, .hero-horizon, .cta-glow, .compare-handle::after { display:none!important; }
+    .pulse-dot, .proof-live::before, .live-flag::before, .cta-caret { animation:none!important; box-shadow:none!important; }
+    .lead-label, h1, p.hero-copy, .lede, .lead-copy, .trust-line, .proof-board, .metrics, .stage-window, .hero h1 .l { animation:none!important; filter:none!important; }
+
+    /* surfaces — flat, square-ish, separated by hairlines rather than shadows */
+    .proof-board, .metrics { border-radius:4px!important; background:var(--surface)!important; box-shadow:none!important; backdrop-filter:none; -webkit-backdrop-filter:none; }
+    .proof-value, .metric strong { font-family:var(--font-body)!important; font-weight:600!important; letter-spacing:-.02em; }
+    .btn, .btn-primary, .card-link, .filter-button, .terminal, .run, .beat-card, .showcase-card, .life-plate, .page-plate, .life-card, .page-card, .agent-guide-link, .community-callout, .cta-prompt, .hero-eyebrow, .stage-window { border-radius:4px!important; }
+    .showcase-card:hover, .life-card:hover .life-plate, .page-card:hover .page-plate, .life-plate:hover { transform:none!important; box-shadow:none!important; border-color:var(--accent)!important; }
+    .showcase-card:target { box-shadow:0 0 0 2px var(--accent)!important; }
+    .terminal, .stage-window, .run, .beat-card { box-shadow:0 1px 2px rgba(var(--shadow-rgb),calc(var(--shadow-k) * 1.5))!important; }
+    .preview-shell { background:var(--sunken)!important; }
+    .community-callout { background:var(--surface-2)!important; }
+    .btn-primary { background:var(--btn-bg); border-color:var(--btn-bg); color:var(--btn-fg); box-shadow:none!important; }
+    .btn-primary:hover { background:var(--accent); border-color:var(--accent); color:#fff; transform:none!important; }
+    .controls { background:rgba(var(--bg-rgb),.96); backdrop-filter:none; -webkit-backdrop-filter:none; border-bottom:1px solid var(--line); }
+    .filter-button[aria-pressed="true"] { background:var(--navy)!important; border-color:var(--navy)!important; color:#fff!important; }
+    *::selection { background:rgba(var(--accent-rgb),.22); color:inherit; }
+    h1 em, .hero h1 em { font-style:normal!important; font-family:inherit!important; }
+    @media (max-width:960px) {
+      .site-nav .nav-links { justify-content:flex-start; overflow-x:auto; scrollbar-width:none; }
+      .site-nav .nav-links::-webkit-scrollbar { display:none; }
+      .site-nav .nav-link { flex:none; }
+    }

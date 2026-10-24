@@ -1,9 +1,11 @@
 ---
 import Brand from './Brand';
-interface Props { page: 'index' | 'gallery' | 'guide' | 'start' | 'community' | 'agent-diagrams' | 'cases/mco-runtime' }
+interface Props { page: string }
 const { page } = Astro.props;
 const home = page === 'index';
-const identities = {
+const identities: Record<string, { en: string; zh: string; label: string }> = {
+  architecture: { en: '/ architecture center', zh: '/ 架构中心', label: 'Archify home' },
+  packs: { en: '/ document packs', zh: '/ 文档包', label: 'Archify home' },
   'cases/mco-runtime': { en: '/ MCO case', zh: '/ MCO 案例', label: 'Archify home' },
   'agent-diagrams': { en: '/ agent diagrams', zh: '/ Agent 画图', label: 'Archify home' },
   gallery: { en: '/ proof lab', zh: '/ 验证作品集', label: 'Back to Archify home' },
@@ -11,9 +13,12 @@ const identities = {
   start: { en: '/ start', zh: '/ 快速上手', label: 'Archify project page' },
   community: { en: '/ community', zh: '/ 社区包', label: 'Archify home' },
 };
-const identity = home ? undefined : identities[page];
+const section = page.startsWith('packs/') ? 'packs' : page;
+const identity = home ? undefined : identities[section];
+const current = section === 'packs' ? 'architecture' : page;
 const guideKeys: Record<string, string> = { guide: 'navGuide', gallery: 'navProof', start: 'navStart', community: 'navCommunity' };
 const links = [
+  { page: 'architecture', en: 'Architecture Center', zh: '架构中心' },
   { page: 'guide', en: 'Guide', zh: '场景指南' },
   { page: 'gallery', en: 'Proof Lab', zh: '验证作品集' },
   { page: 'start', en: 'Get started', zh: '开始使用' },
@@ -27,7 +32,7 @@ const links = [
   </a>
   <div class="nav-right">
     <div class="nav-links">
-    {links.map(link => <a class="nav-link" href={`${link.page}.html`} aria-current={page === link.page ? 'page' : undefined} {...(home ? { 'data-i18n': `nav-${link.page}` } : page === 'guide' ? { 'data-i18n': guideKeys[link.page] } : { 'data-en': link.en, 'data-zh': link.zh })}>{link.en}</a>)}
+    {links.map(link => <a class="nav-link" href={`${link.page}.html`} aria-current={current === link.page ? 'page' : undefined} {...(home && link.page !== 'architecture' ? { 'data-i18n': `nav-${link.page}` } : page === 'guide' && guideKeys[link.page] ? { 'data-i18n': guideKeys[link.page] } : { 'data-en': link.en, 'data-zh': link.zh })}>{link.en}</a>)}
     <a class="nav-link" href="https://github.com/tt-a1i/archify" target="_blank" rel="noopener">GitHub<span class="nav-stars" data-gh-stars hidden></span></a>
     </div>
     <button class="btn-theme" type="button" data-theme-toggle aria-label="Switch to dark theme">
@@ -49,7 +54,7 @@ const links = [
     var toggle = document.querySelector('[data-theme-toggle]');
     var syncTheme = function () {
       var dark = root.getAttribute('data-theme') === 'dark';
-      if (meta) meta.setAttribute('content', dark ? '#07080a' : '#f5f6f3');
+      if (meta) meta.setAttribute('content', dark ? '#0b1420' : '#232f3e');
       toggle.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
       toggle.setAttribute('aria-pressed', String(dark));
     };

@@ -27,7 +27,7 @@ export function createCommunityFixture() {
     'website/src/', 'website/public/', 'website/astro.config.mjs', 'website/scripts/', 'website/package.json',
     'archify/package.json', 'archify/skill-release.json', 'archify/recipes/',
     'scripts/site-copy.mjs', 'scripts/check-community-packages.mjs',
-    'docs/gallery/', 'docs/assets/', ...PUBLISHED_CASES.flatMap(entry => [`docs/${entry.artifact}`, `docs/${entry.input}`])], { cwd: repoRoot, encoding: 'utf8' })
+    'docs/gallery/', 'docs/assets/', 'docs/packs/', ...PUBLISHED_CASES.flatMap(entry => [`docs/${entry.artifact}`, `docs/${entry.input}`])], { cwd: repoRoot, encoding: 'utf8' })
     .split('\0').filter(Boolean);
   for (const relative of tracked) copy(relative);
   fs.symlinkSync(path.join(websiteRoot, 'node_modules'), path.join(root, 'website/node_modules'), process.platform === 'win32' ? 'junction' : 'dir');

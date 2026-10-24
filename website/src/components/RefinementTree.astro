@@ -1,0 +1,16 @@
+---
+import type { Pack, PackArtifact } from '../data/pack-types';
+type TreeNode = { artifact: PackArtifact; children: TreeNode[] };
+import { C4_LABELS, TYPE_LABELS, artifactPage } from '../data/architecture-center.mjs';
+interface Props { pack: Pack; nodes: TreeNode[] }
+const { pack, nodes } = Astro.props;
+---
+<ul class="ac-tree">
+  {nodes.map(({ artifact, children }) => (
+    <li>
+      <span class="ac-chip">{TYPE_LABELS[artifact.type].en}{artifact.viewpoint?.c4_level ? ` · ${C4_LABELS[artifact.viewpoint.c4_level]}` : ''}</span>
+      <a href={artifactPage(pack, artifact)}>{artifact.title}</a>
+      {children.length > 0 && <Astro.self pack={pack} nodes={children} />}
+    </li>
+  ))}
+</ul>

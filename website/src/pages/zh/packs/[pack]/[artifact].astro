@@ -1,0 +1,6 @@
+---
+import Page from "../../../packs/[pack]/[artifact].astro";
+import { artifactRoutes } from "../../../../data/architecture-center.mjs";
+export function getStaticPaths() { return artifactRoutes(); }
+---
+<Page {...Astro.props} lang="zh" />

@@ -41,7 +41,7 @@
         document.documentElement.setAttribute('data-preview-theme', previewTheme);
         document.getElementById('preview-theme').textContent = 'Preview: ' + previewTheme;
         document.querySelectorAll('iframe[data-src-base]').forEach(function (frame) {
-          frame.src = frame.getAttribute('data-src-base') + '?embed=1&theme=' + previewTheme;
+          frame.src = frame.getAttribute('data-src-base') + '?embed=1&preset=reference&theme=' + previewTheme;
         });
       }
 

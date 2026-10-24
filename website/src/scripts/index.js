@@ -109,7 +109,7 @@
   window.addEventListener('archify:themechange', syncFrameTheme);
 
   function proofEmbedUrl(proof) {
-    return `${proof.artifact}?embed=1&theme=${siteTheme()}${proof.embedHash || proof.hash}`;
+    return `${proof.artifact}?embed=1&preset=reference&theme=${siteTheme()}${proof.embedHash || proof.hash}`;
   }
 
   function replaceFrameHash(hash) {

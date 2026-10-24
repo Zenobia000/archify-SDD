@@ -63,7 +63,7 @@
     .hero-copy { position:relative; max-width:1200px; display:flex; flex-direction:column; align-items:center; text-align:center; }
     .hero-eyebrow { display:inline-flex; align-items:center; gap:.65rem; padding:.3rem .85rem .3rem .3rem; margin-bottom:1.75rem; border:1px solid var(--line-hi); border-radius:999px; background:rgba(var(--fg-rgb),.03); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); color:var(--text-2); font-size:.8125rem; font-weight:450; text-decoration:none; white-space:nowrap; transition:border-color .2s var(--ease-out),color .2s var(--ease-out); }
     .hero-eyebrow:hover { border-color:rgba(var(--accent-rgb),.5); color:var(--text); }
-    .eyebrow-tag { padding:.22rem .55rem; border-radius:999px; background:var(--accent); color:#07080a; font-family:var(--font-mono); font-size:.6875rem; font-weight:600; }
+    .eyebrow-tag { padding:.22rem .55rem; border-radius:999px; background:var(--accent); color:#fff; font-family:var(--font-mono); font-size:.6875rem; font-weight:600; }
     .eyebrow-arrow { color:var(--text-3); transition:transform .2s var(--ease-out),color .2s var(--ease-out); }
     .hero-eyebrow:hover .eyebrow-arrow { color:var(--accent); transform:translateX(3px); }
     .pulse-dot { width:6px; height:6px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 0 rgba(var(--accent-rgb),.6); animation:pulse 2.4s ease-in-out infinite; }
@@ -557,3 +557,6 @@
       footer { padding:2rem 1.25rem; }
       .footer-left { flex-direction:column; align-items:flex-start; gap:1rem; }
     }
+
+    .hero-ac-link { display:inline-block; margin-top:1.1rem; padding:.5rem .9rem; border:1px solid var(--line-hi); border-radius:4px; background:var(--surface); color:var(--accent-text); font-size:.875rem; font-weight:600; text-decoration:none; }
+    .hero-ac-link:hover { border-color:var(--accent); }

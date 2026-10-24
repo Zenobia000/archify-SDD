@@ -62,7 +62,7 @@ for (const page of pages) {
       assert.equal(base.length, 1);
       assert.equal(attr(base[0], 'href'), './');
       const baseUri = new URL(attr(base[0], 'href'), 'https://tt-a1i.github.io/archify/index.html');
-      assert.equal(new URL(attr(frame, 'src'), baseUri).href, 'https://tt-a1i.github.io/archify/gallery/artifacts/agent-tool-call.workflow.html?embed=1&theme=dark#focus=planner&reach=downstream');
+      assert.equal(new URL(attr(frame, 'src'), baseUri).href, 'https://tt-a1i.github.io/archify/gallery/artifacts/agent-tool-call.workflow.html?embed=1&preset=reference&theme=light#focus=planner&reach=downstream');
       assert.equal(new URL(attr(open, 'href'), baseUri).href, 'https://tt-a1i.github.io/archify/gallery/artifacts/agent-tool-call.workflow.html?present=1#focus=planner&reach=downstream');
       const proofScript = elements(next, 'script').find(script => (script.childNodes || []).some(child => (child.value || '').includes("hash: '#lens=backend~database'")));
       assert.ok(proofScript, 'homepage proof configuration must remain present');

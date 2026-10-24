@@ -27,10 +27,10 @@ test('all built pages expose one shared top navigation and the correct current p
     assert.ok(nav, page);
     const links = nodes(nav).filter(node => node.tagName === 'a' && hasClass(node, 'nav-link'));
     assert.deepEqual(links.map(resolvedHref), [
-      ...['guide', 'gallery', 'start', 'community'].map(hrefFor), 'https://github.com/tt-a1i/archify',
+      ...['architecture', 'guide', 'gallery', 'start', 'community'].map(hrefFor), 'https://github.com/tt-a1i/archify',
     ], page);
     assert.deepEqual(links.filter(node => attr(node, 'aria-current') === 'page').map(resolvedHref),
-      ['index', 'agent-diagrams', 'cases/mco-runtime'].includes(page) ? [] : [hrefFor(page)], page);
+      ['index', 'agent-diagrams', 'cases/mco-runtime'].includes(page) ? [] : [hrefFor(page.startsWith('packs/') ? 'architecture' : page)], page);
     const community = links.find(node => resolvedHref(node) === hrefFor('community'));
     if (page === 'index' || page === 'guide') {
       assert.equal(attr(community, 'data-i18n'), page === 'index' ? 'nav-community' : 'navCommunity', page);
@@ -44,7 +44,7 @@ test('all built pages expose one shared top navigation and the correct current p
       assert.equal(destination.href, hrefFor('start') + '#install', 'homepage installation opens the agent-aware setup');
     }
     const row = nodes(nav).find(node => hasClass(node, 'nav-links'));
-    assert.equal(nodes(row).filter(node => node.tagName === 'a').length, 5, page);
+    assert.equal(nodes(row).filter(node => node.tagName === 'a').length, 6, page);
   }
 });
 
